@@ -18,8 +18,7 @@ class Output {
      * Zapiše vsebino [data] po vrsticah.
      */
     static void write(std::string filename, std::vector<std::vector<std::string>> data) {
-      std::ofstream file;
-      file.open(filename);
+      std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
 
       if (!file.good()) {
         throw std::invalid_argument("Cannot open file");
@@ -31,8 +30,9 @@ class Output {
         for (auto &text : line) {
           file << text << " ";
         }
-        file << std::endl;
+        file << "\n";
       }
+      file << std::flush;
 
       if (!file.good()) {
         throw std::invalid_argument("Writing to file failed");
