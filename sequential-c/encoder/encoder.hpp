@@ -8,9 +8,18 @@
 #define ENCODER_HPP
 
 #include <iostream>
+#include <map>
 #include <random>
 #include <string>
 #include <vector>
+
+struct Node {
+  int value;
+  bool bit;
+  bool leftSon = true;
+  Node *left = nullptr;
+  Node *right = nullptr;
+};
 
 class Huffman {
  private:
@@ -20,6 +29,32 @@ class Huffman {
   static const std::string BLACK[];
 
  public:
+  static std::pair<int, std::multimap<int, std::pair<int, bool>>> preparData(
+      std::vector<std::vector<std::pair<int, bool>>> &data) {
+    std::map<int, int> w;
+    std::map<int, int> b;
+
+    int cnt = 0;
+    for (auto &i : data) {
+      for (auto &j : i) {
+        if (j.second)
+          b[j.first]++;
+        else
+          w[j.first]++;
+
+        cnt += 1;
+      }
+    }
+
+    std::multimap<int, std::pair<int, bool>> new_data;
+
+    for (auto &i : w) new_data.insert({i.second, {i.first, false}});
+    for (auto &i : b) new_data.insert({i.second, {i.first, true}});
+
+    return {cnt, new_data};
+  }
+
+
   static std::vector<std::vector<std::string>> encode(
       std::vector<std::vector<std::pair<int, bool>>> &data) {
     std::vector<std::vector<std::string>> encoded_data(
