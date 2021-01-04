@@ -23,10 +23,10 @@ struct in_out_stream {
 void* read(void* arg) {
   Stream<vector<vector<bool>>>* read_stream = (Stream<vector<vector<bool>>>*) arg;
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 250; i++) {
     auto image_data = Input::read("../../assets/1.png");
     read_stream->push(image_data);
-    printf("Read image %d\n", i + 1);
+    //printf("Read image %d\n", i + 1);
   }
 
   return nullptr;
@@ -40,7 +40,7 @@ void* rle(void* arg) {
     auto image_data = stream->in->pop();
     auto rle_data = RLE::encode(image_data);
     stream->out->push(rle_data);
-    printf("RLE encoded %d\n", ++i);
+    // printf("RLE encoded %d\n", ++i);
   }
 }
 
@@ -52,7 +52,7 @@ void* huffman(void* arg) {
     auto rle_data = stream->in->pop();
     auto huffman_data = Huffman::encode(rle_data);
     stream->out->push(huffman_data);
-    printf("Huffman encoded %d\n", ++i);
+    // printf("Huffman encoded %d\n", ++i);
   }
 }
 
@@ -63,7 +63,9 @@ void* write(void* arg) {
   while (true) {
     auto huffman_data = write_stream->pop();
     Output::write("test.txt", huffman_data);
-    printf("Written %d\n", ++i);
+    //printf("Written %d\n", ++i);
+    i++;
+    if (i >= 250) return nullptr;
   }
 }
 
@@ -90,10 +92,8 @@ int main(int argc, char const *argv[]) {
   pthread_create(&read_thread, NULL, read, &read_stream);
   pthread_create(&rle_thread, NULL, rle, &rle_in_out_stream);
   pthread_create(&huffman_thread, NULL, huffman, &huffman_in_out_stream);
-  pthread_create(&read_thread, NULL, write, &write_stream);
+  pthread_create(&write_thread, NULL, write, &write_stream);
 
-  pthread_join(read_thread, NULL);
-  pthread_join(rle_thread, NULL);
-
+  pthread_join(write_thread, NULL);
   return 0;
 }
