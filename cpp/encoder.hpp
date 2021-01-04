@@ -9,16 +9,56 @@
 
 #include <iostream>
 #include <map>
+#include <queue>
 #include <random>
 #include <string>
 #include <vector>
 
-struct Node {
-  int value;
+class Node {
+ public:
+  int value = 0;
   bool bit;
-  bool leftSon = true;
   Node *left = nullptr;
   Node *right = nullptr;
+
+  static Node *create(int value, int bit) {
+    Node *new_node = new Node();
+    new_node->value = value;
+    new_node->bit = bit;
+    return new_node;
+  }
+
+  static Node *create() { return new Node(); }
+
+  bool isLeaf() {
+    if (left == nullptr && right == nullptr) return true;
+    return false;
+  }
+
+  void preorderTraverse() {
+    if (isLeaf()) {
+      std::cout << value << " " << bit << std::endl;
+      return;
+    }
+    if (left != nullptr) left->preorderTraverse();
+    if (right != nullptr) right->preorderTraverse();
+  }
+
+  void traverse() {
+    std::queue<Node *> q;
+    q.push(this);
+
+    while (!q.empty()) {
+      auto t = q.front();
+      if (t->left != nullptr) q.push(t->left);
+      if (t->right != nullptr) q.push(t->right);
+
+      if (t->isLeaf()) {
+        std::cout << t->value << " " << t->bit << std::endl;
+      }
+      q.pop();
+    }
+  }
 };
 
 class Huffman {
@@ -29,31 +69,47 @@ class Huffman {
   static const std::string BLACK[];
 
  public:
-  static std::pair<int, std::multimap<int, std::pair<int, bool>>> preparData(
+  static std::multimap<int, Node *> preparData(
       std::vector<std::vector<std::pair<int, bool>>> &data) {
     std::map<int, int> w;
     std::map<int, int> b;
 
-    int cnt = 0;
     for (auto &i : data) {
       for (auto &j : i) {
         if (j.second)
           b[j.first]++;
         else
           w[j.first]++;
-
-        cnt += 1;
       }
     }
 
-    std::multimap<int, std::pair<int, bool>> new_data;
+    std::multimap<int, Node *> new_data;
+    for (auto &i : w) new_data.insert({i.second, Node::create(i.first, false)});
+    for (auto &i : b) new_data.insert({i.second, Node::create(i.first, true)});
 
-    for (auto &i : w) new_data.insert({i.second, {i.first, false}});
-    for (auto &i : b) new_data.insert({i.second, {i.first, true}});
-
-    return {cnt, new_data};
+    return new_data;
   }
 
+  static Node *huffmanTree(std::multimap<int, Node *> &data) {
+    while (data.size() > 1) {
+      auto p1 = data.begin();
+      auto p2 = ++data.begin();
+
+      // std::cout << p1->second->value << " " << p2->second->value <<
+
+      Node *new_node = Node::create();
+      new_node->left = p1->second;
+      new_node->right = p2->second;
+      new_node->value = p1->first + p2->first;
+
+      data.insert({new_node->value, new_node});
+
+      data.erase(p1);
+      data.erase(p2);
+    }
+
+    return data.begin()->second;
+  }
 
   static std::vector<std::vector<std::string>> encode(
       std::vector<std::vector<std::pair<int, bool>>> &data) {
