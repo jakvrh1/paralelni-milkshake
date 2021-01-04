@@ -5,9 +5,9 @@
 #include <iostream>
 #include <random>
 
-#include "encoder/encoder.hpp"
-#include "io/input.hpp"
-#include "io/output.hpp"
+#include "../encoder.hpp"
+#include "../input.hpp"
+#include "../output.hpp"
 
 using namespace std;
 
