@@ -22,7 +22,7 @@ class Input {
      * Prebere sliko v datoteki z imenom [filename]. Sliko vrne kot vektor 8-bitnih
      * števil (0 = črna, 1 = bela, ostale vrednosti se ne pojavljajo).
      */
-    static std::vector<std::vector<bool>> read(const char* filename) {
+    static std::vector<std::vector<bool>>* read(const char* filename) {
       // Sliko preberemo že kot sivo (število komponent = 1)
       int width, height;
       unsigned char* data = stbi_load(filename, &width, &height, NULL, 1);
@@ -37,8 +37,8 @@ class Input {
         throw std::invalid_argument("Image is not of correct size");
       }
 
-      std::vector<std::vector<bool>> bits;
-      bits.assign(A4_LINES, std::vector<bool>(A4_LINE_LENGTH, false));
+      std::vector<std::vector<bool>>* bits = new std::vector<std::vector<bool>>();
+      bits->assign(A4_LINES, std::vector<bool>(A4_LINE_LENGTH, false));
 
       // Sprehodimo se po sliki in za bele piksle nastavimo true
       // Če naletimo na piksel, ki ni bel ali črn, vrnemo null
@@ -46,7 +46,7 @@ class Input {
         for (int pixel = 0; pixel < A4_LINE_LENGTH; pixel++) {
           int idx = line * A4_LINE_LENGTH + pixel;
           if (data[idx] == 255) {
-            bits[line][pixel] = true;
+            (*bits)[line][pixel] = true;
           } else if (data[idx] != 0) {
             throw std::invalid_argument("Image is not black and white");
           }
