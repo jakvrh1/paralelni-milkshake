@@ -10,6 +10,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "types.hpp"
 
 #define A4_LINES 1145
 #define A4_LINE_LENGTH 1728
@@ -22,7 +23,7 @@ class Input {
      * Prebere sliko v datoteki z imenom [filename]. Sliko vrne kot vektor 8-bitnih
      * števil (0 = črna, 1 = bela, ostale vrednosti se ne pojavljajo).
      */
-    static std::vector<std::vector<bool>>* read(const char* filename) {
+    static bools* read(const char* filename) {
       // Sliko preberemo že kot sivo (število komponent = 1)
       int width, height;
       unsigned char* data = stbi_load(filename, &width, &height, NULL, 1);
@@ -37,7 +38,7 @@ class Input {
         throw std::invalid_argument("Image is not of correct size");
       }
 
-      std::vector<std::vector<bool>>* bits = new std::vector<std::vector<bool>>();
+      bools* bits = new bools();
       bits->assign(A4_LINES, std::vector<bool>(A4_LINE_LENGTH, false));
 
       // Sprehodimo se po sliki in za bele piksle nastavimo true

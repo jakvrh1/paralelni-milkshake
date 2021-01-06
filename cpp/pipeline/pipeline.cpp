@@ -21,19 +21,16 @@ using namespace std;
  * po enem streamu in odhajajo po drugem.
  */
 template <typename T, typename U>
-struct in_out_stream {
+struct io_stream {
   Stream<T>* in;
   Stream<U>* out;
 };
-
-typedef in_out_stream<vector<vector<bool>>*, vector<vector<pair<int, bool>>>> rle_in_out_stream;
-typedef in_out_stream<vector<vector<pair<int, bool>>>, vector<vector<string>>> huffman_in_out_stream;
 
 /* 
  * Funkcija za niti, ki berejo.
  */
 void* read(void* arg) {
-  Stream<vector<vector<bool>>*>* read_stream = (Stream<vector<vector<bool>>*>*) arg;
+  Stream<bools*>* read_stream = (Stream<bools*>*) arg;
 
   for (int i = 0; i < REPS; i++) {
     auto image_data = Input::read("../../assets/1.png");
@@ -48,7 +45,7 @@ void* read(void* arg) {
  * Funkcija za niti, ki prebrane podatke kodirajo z RLE.
  */ 
 void* rle(void* arg) {
-  rle_in_out_stream* stream = (rle_in_out_stream*) arg;
+  io_stream<bools*, intbools>* stream = (io_stream<bools*, intbools>*) arg;
 
   int i = 0;
   while (true) {
@@ -63,7 +60,7 @@ void* rle(void* arg) {
  * Funkcija za niti, ki RLE podatke kodirajo s huffmanom.
  */  
 void* huffman(void* arg) {
-  huffman_in_out_stream* stream = (huffman_in_out_stream*) arg;
+  io_stream<intbools, strings>* stream = (io_stream<intbools, strings>*) arg;
 
   int i = 0;
   while (true) {
@@ -78,7 +75,7 @@ void* huffman(void* arg) {
  * Funkcija za niti, ki berejo.
  */
 void* write(void* arg) {
-  Stream<vector<vector<string>>>* write_stream = (Stream<vector<vector<string>>>*) arg;
+  Stream<strings>* write_stream = (Stream<strings>*) arg;
 
   for (int i = 0; i < REPS; i++) {
     auto huffman_data = write_stream->pop();
@@ -94,17 +91,17 @@ void* write(void* arg) {
  * Glavna nit
  */
 int main(int argc, char const *argv[]) {
-  Stream<vector<vector<bool>>*> read_stream;
-  Stream<vector<vector<pair<int, bool>>>> encoded_stream;
-  Stream<vector<vector<string>>> write_stream;
+  Stream<bools*> read_stream;
+  Stream<intbools> encoded_stream;
+  Stream<strings> write_stream;
 
   // Stream za drugo stopnjo cevovoda, run length encoding
-  rle_in_out_stream rle_io_stream;
+  io_stream<bools*, intbools> rle_io_stream;
   rle_io_stream.in = &read_stream;
   rle_io_stream.out = &encoded_stream;
 
   // Stream za tretjo stopnjo cevovoda, huffman encoding
-  huffman_in_out_stream huffman_io_stream;
+  io_stream<intbools, strings> huffman_io_stream;
   huffman_io_stream.in = &encoded_stream;
   huffman_io_stream.out = &write_stream;
 
