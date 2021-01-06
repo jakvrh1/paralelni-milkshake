@@ -37,6 +37,21 @@ class Node {
     return false;
   }
 
+  void disp() {
+    ascii_rep("", this);
+  }
+
+  void ascii_rep(std::string s, Node *node) {
+    if(node->isLeaf()) {
+      std::cout << s << "---- " << node->value << " " << node->bit << std::endl;
+      return;
+    }
+
+    ascii_rep(s + "    ", node->right);
+    std::cout << s << "----|\n";
+    ascii_rep(s + "    ", node->left);
+  }
+
   void preorderTraverse() {
     if (isLeaf()) {
       std::cout << value << " " << bit << std::endl;

@@ -17,6 +17,7 @@ int main(int argc, char const *argv[]) {
     auto rle_data = RLE::encode(*image_data);
     auto huffman_t_data = Huffman::preparData(rle_data);
     auto h_tree = Huffman::huffmanTree(huffman_t_data);
+    h_tree->disp();
     //h_tree->traverse();
     //h_tree->preorderTraverse();
     //Output::write("test.txt", huffman_data); 
