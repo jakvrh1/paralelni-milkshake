@@ -18,7 +18,7 @@ class Output {
     /**
      * Zapiše vsebino [data] po vrsticah.
      */
-    static void write(const std::string &filename, const strings &data) {
+    static void write(const std::string &filename, const Vec<std::string> &data) {
       std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
 
       if (!file.good()) {

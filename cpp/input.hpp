@@ -23,7 +23,7 @@ class Input {
      * Prebere sliko v datoteki z imenom [filename]. Sliko vrne kot vektor 8-bitnih
      * števil (0 = črna, 1 = bela, ostale vrednosti se ne pojavljajo).
      */
-    static bools* read(const char* filename) {
+    static Vec<bool>* read(const char* filename) {
       // Sliko preberemo že kot sivo (število komponent = 1)
       int width, height;
       unsigned char* data = stbi_load(filename, &width, &height, NULL, 1);
@@ -38,7 +38,7 @@ class Input {
         throw std::invalid_argument("Image is not of correct size");
       }
 
-      bools* bits = new bools();
+      Vec<bool>* bits = new Vec<bool>();
       bits->assign(A4_LINES, std::vector<bool>(A4_LINE_LENGTH, false));
 
       // Sprehodimo se po sliki in za bele piksle nastavimo true

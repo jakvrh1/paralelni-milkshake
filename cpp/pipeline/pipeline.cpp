@@ -30,7 +30,7 @@ struct io_stream {
  * Funkcija za niti, ki berejo.
  */
 void* read(void* arg) {
-  Stream<bools*>* read_stream = (Stream<bools*>*) arg;
+  Stream<Vec<bool>*>* read_stream = (Stream<Vec<bool>*>*) arg;
 
   for (int i = 0; i < REPS; i++) {
     auto image_data = Input::read("../../assets/1.png");
@@ -45,7 +45,7 @@ void* read(void* arg) {
  * Funkcija za niti, ki prebrane podatke kodirajo z RLE.
  */ 
 void* rle(void* arg) {
-  io_stream<bools*, intbools>* stream = (io_stream<bools*, intbools>*) arg;
+  io_stream<Vec<bool>*, Vec<int_bool>>* stream = (io_stream<Vec<bool>*, Vec<int_bool>>*) arg;
 
   int i = 0;
   while (true) {
@@ -60,7 +60,7 @@ void* rle(void* arg) {
  * Funkcija za niti, ki RLE podatke kodirajo s huffmanom.
  */  
 void* huffman(void* arg) {
-  io_stream<intbools, strings>* stream = (io_stream<intbools, strings>*) arg;
+  io_stream<Vec<int_bool>, Vec<string>>* stream = (io_stream<Vec<int_bool>, Vec<string>>*) arg;
 
   int i = 0;
   while (true) {
@@ -75,7 +75,7 @@ void* huffman(void* arg) {
  * Funkcija za niti, ki berejo.
  */
 void* write(void* arg) {
-  Stream<strings>* write_stream = (Stream<strings>*) arg;
+  Stream<Vec<string>>* write_stream = (Stream<Vec<string>>*) arg;
 
   for (int i = 0; i < REPS; i++) {
     auto huffman_data = write_stream->pop();
@@ -91,17 +91,17 @@ void* write(void* arg) {
  * Glavna nit
  */
 int main(int argc, char const *argv[]) {
-  Stream<bools*> read_stream;
-  Stream<intbools> encoded_stream;
-  Stream<strings> write_stream;
+  Stream<Vec<bool>*> read_stream;
+  Stream<Vec<int_bool>> encoded_stream;
+  Stream<Vec<string>> write_stream;
 
   // Stream za drugo stopnjo cevovoda, run length encoding
-  io_stream<bools*, intbools> rle_io_stream;
+  io_stream<Vec<bool>*, Vec<int_bool>> rle_io_stream;
   rle_io_stream.in = &read_stream;
   rle_io_stream.out = &encoded_stream;
 
   // Stream za tretjo stopnjo cevovoda, huffman encoding
-  io_stream<intbools, strings> huffman_io_stream;
+  io_stream<Vec<int_bool>, Vec<string>> huffman_io_stream;
   huffman_io_stream.in = &encoded_stream;
   huffman_io_stream.out = &write_stream;
 
