@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+#include "types.hpp"
+
 class Node {
  public:
   int value = 0;
@@ -71,8 +73,7 @@ class Huffman {
   static const std::string BLACK_SORTED[];
 
  public:
-  static std::multimap<int, Node *> preparData(
-      std::vector<std::vector<std::pair<int, bool>>> &data) {
+  static std::multimap<int, Node *> preparData(Vec<int_bool> &data) {
     std::map<int, int> w;
     std::map<int, int> b;
 
@@ -110,10 +111,8 @@ class Huffman {
     return data.begin()->second;
   }
 
-  static std::vector<std::vector<std::string>> encode(
-      std::vector<std::vector<std::pair<int, bool>>> &data) {
-    std::vector<std::vector<std::string>> encoded_data(
-        data.size(), std::vector<std::string>());
+  static Vec<std::string> encode(Vec<int_bool> &data) {
+    Vec<std::string> encoded_data(data.size(), std::vector<std::string>());
 
     for (int i = 0; i < data.size(); ++i) {
       int ind_offset = 0;
@@ -416,10 +415,8 @@ const std::string Huffman::BLACK_SORTED[] = {"11",
 
 class RLE {
  public:
-  static std::vector<std::vector<std::pair<int, bool>>> encode(
-      std::vector<std::vector<bool>> &data) {
-    std::vector<std::vector<std::pair<int, bool>>> encoded_data(
-        data.size(), std::vector<std::pair<int, bool>>());
+  static Vec<int_bool> encode(Vec<bool> &data) {
+    Vec<int_bool> encoded_data(data.size(), std::vector<int_bool>());
 
     for (int line = 0; line < data.size(); ++line) {
       if (data[line][data[line].size() - 1]) {
@@ -444,7 +441,7 @@ class RLE {
 
   static void testRLE() {
     std::srand(123);
-    std::vector<std::vector<bool>> A(10, std::vector<bool>(10, 0));
+    Vec<bool> A(10, std::vector<bool>(10, 0));
 
     for (int i = 0; i < 10; ++i) {
       for (int j = 0; j < 10; ++j) {
