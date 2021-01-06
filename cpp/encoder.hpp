@@ -95,7 +95,8 @@ class Huffman {
       auto p1 = data.begin();
       auto p2 = ++data.begin();
 
-      // std::cout << p1->second->value << " " << p2->second->value <<
+      data.erase(p1);
+      data.erase(p2);
 
       Node *new_node = Node::create();
       new_node->left = p1->second;
@@ -103,11 +104,7 @@ class Huffman {
       new_node->value = p1->first + p2->first;
 
       data.insert({new_node->value, new_node});
-
-      data.erase(p1);
-      data.erase(p2);
     }
-
     return data.begin()->second;
   }
 
