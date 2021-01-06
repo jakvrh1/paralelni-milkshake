@@ -9,6 +9,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include "types.hpp"
 
 class Output {
 
@@ -17,10 +18,7 @@ class Output {
     /**
      * Zapiše vsebino [data] po vrsticah.
      */
-    static void write(
-      const std::string &filename, 
-      const std::vector<std::vector<std::string>> &data
-    ) {
+    static void write(const std::string &filename, const Vec<std::string> &data) {
       std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
 
       if (!file.good()) {
