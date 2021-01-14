@@ -12,7 +12,8 @@
 using namespace std;
 
 int main(int argc, char const *argv[]) {
-  /*for (int i = 0; i < 100; i++) {
+  /*
+  for (int i = 0; i < 100; i++) {
     auto image_data = Input::read("../../assets/1.png");
     auto rle_data = RLE::encode(*image_data);
 
@@ -28,9 +29,11 @@ int main(int argc, char const *argv[]) {
     //h_tree->preorderTraverse();
     //Output::write("test.txt", huffman_data); 
     break;
-  }*/
+  }
+  */
 
-  RLE::testRLE();
-
+  while(true) {
+    RLE::testRLE(10, true);
+  }
   return 0;
 }
