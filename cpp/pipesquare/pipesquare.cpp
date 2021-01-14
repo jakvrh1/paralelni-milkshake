@@ -37,22 +37,12 @@ struct io_stream {
  * Funkcija za niti, ki berejo.
  */
 void* read(void* arg) {
-  Stream<Vec<bool>*>* read_stream = (Stream<Vec<bool>*>*) arg;
+  io_stream<string, Vec<bool>*>* stream = (io_stream<string, Vec<bool>*>*) arg;
 
   while (true) {
-
-    pthread_mutex_lock(&mutex_read);
-    if (reads < REPS) {
-      reads++;
-    } else {
-      pthread_mutex_unlock(&mutex_read);
-      break;
-    }
-    pthread_mutex_unlock(&mutex_read);
-
-    auto image_data = Input::read("../../assets/1.png");
-    read_stream->produce(image_data);
-    //printf("Read image %d\n", i + 1);
+    auto filename = stream->in->consume(); 
+    auto image_data = Input::read(filename.c_str());
+    stream->out->produce(image_data);
   }
 
   return nullptr;
@@ -69,7 +59,6 @@ void* rle(void* arg) {
     auto image_data = stream->in->consume();
     auto rle_data = RLE::encode(*image_data);
     stream->out->produce(rle_data);
-    //printf("RLE encoded %d\n", ++i);
   }
 }
 
@@ -84,7 +73,6 @@ void* huffman(void* arg) {
     auto rle_data = stream->in->consume();
     auto huffman_data = Huffman::encode(rle_data);
     stream->out->produce(huffman_data);
-    // printf("Huffman encoded %d\n", ++i);
   }
 }
 
@@ -121,13 +109,19 @@ int main(int argc, char const *argv[]) {
   mutex_read = PTHREAD_MUTEX_INITIALIZER;
   mutex_write = PTHREAD_MUTEX_INITIALIZER;
 
-  Stream<Vec<bool>*> read_stream;
+  Stream<string> input_stream;
+  Stream<Vec<bool>*> bit_stream;
   Stream<Vec<int_bool>> encoded_stream;
   Stream<Vec<string>> write_stream;
 
+  // Stream za prvo stopnjo cevovoda, image reading
+  io_stream<string, Vec<bool>*> read_io_stream;
+  read_io_stream.in = &input_stream;
+  read_io_stream.out = &bit_stream;
+
   // Stream za drugo stopnjo cevovoda, run length encoding
   io_stream<Vec<bool>*, Vec<int_bool>> rle_io_stream;
-  rle_io_stream.in = &read_stream;
+  rle_io_stream.in = &bit_stream;
   rle_io_stream.out = &encoded_stream;
 
   // Stream za tretjo stopnjo cevovoda, huffman encoding
@@ -136,11 +130,11 @@ int main(int argc, char const *argv[]) {
   huffman_io_stream.out = &write_stream;
 
   pthread_t read_thread_1;
-  pthread_create(&read_thread_1, NULL, read, &read_stream);
+  pthread_create(&read_thread_1, NULL, read, &read_io_stream);
   pthread_t read_thread_2;
-  pthread_create(&read_thread_2, NULL, read, &read_stream);
+  pthread_create(&read_thread_2, NULL, read, &read_io_stream);
   pthread_t read_thread_3;
-  pthread_create(&read_thread_3, NULL, read, &read_stream);
+  pthread_create(&read_thread_3, NULL, read, &read_io_stream);
 
   pthread_t rle_thread_1;
   pthread_create(&rle_thread_1, NULL, rle, &rle_io_stream);
@@ -156,6 +150,10 @@ int main(int argc, char const *argv[]) {
   pthread_create(&write_thread_1, NULL, write, &write_stream);
   pthread_t write_thread_2;
   pthread_create(&write_thread_2, NULL, write, &write_stream);
+
+  // V cevovod posljemo delo
+  for (int i = 0; i < REPS; i++) 
+    input_stream.produce("../../assets/1.png");
 
   pthread_join(write_thread_1, NULL);
   pthread_join(write_thread_2, NULL);
