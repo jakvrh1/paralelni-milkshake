@@ -12,6 +12,7 @@
 #include <queue>
 #include <random>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "types.hpp"
@@ -32,17 +33,18 @@ class Node {
 
   static Node *create() { return new Node(); }
 
+  // TODO free whole tree!!! Now you only free one node
+  void erase() { delete (this); }
+
   bool isLeaf() {
     if (left == nullptr && right == nullptr) return true;
     return false;
   }
 
-  void disp() {
-    ascii_rep("", this);
-  }
+  void disp() { ascii_rep("", this); }
 
   void ascii_rep(std::string s, Node *node) {
-    if(node->isLeaf()) {
+    if (node->isLeaf()) {
       std::cout << s << "---- " << node->value << " " << node->bit << std::endl;
       return;
     }
@@ -87,8 +89,64 @@ class Huffman {
   static const std::string BLACK[];
   static const std::string BLACK_SORTED[];
 
+  enum Type : bool { White = false, Black = true };
+
+  std::string code = "";
+  void encodeTree(Node *node, const Type &type) {
+    if (node->isLeaf()) {
+      if (type == Type::White)
+        encode_white.insert({node->value, code});
+      else
+        encode_black.insert({node->value, code});
+
+      node->erase();
+      return;
+    }
+
+    code.push_back('1');
+    encodeTree(node->left, type);
+    code.pop_back();
+
+    code.push_back('0');
+    encodeTree(node->right, type);
+    code.pop_back();
+
+    node->erase();
+  }
+
  public:
-  static std::multimap<int, Node *> preparData(Vec<int_bool> &data) {
+  Vec<int_bool> data;
+
+  // Node *white_tree;
+  // Node *black_tree;
+
+  std::unordered_map<int, std::string> encode_white;
+  std::unordered_map<int, std::string> encode_black;
+
+  static Huffman *initialize(Vec<int_bool> &data) {
+    Huffman *hf = new Huffman();
+    hf->data = data;
+
+    auto huffman_tree_root_node = Huffman::preparData(hf->data);
+
+    // hf->white_tree = Huffman::huffmanTree(huffman_tree_root_node.first);
+    // hf->black_tree = Huffman::huffmanTree(huffman_tree_root_node.second);
+
+    hf->encodeTree(Huffman::huffmanTree(huffman_tree_root_node.first),
+                   Type::White);
+    hf->encodeTree(Huffman::huffmanTree(huffman_tree_root_node.second),
+                   Type::Black);
+
+    // hf->encodeTree(hf->white_tree, Type::White);
+    // hf->encodeTree(hf->black_tree, Type::Black);
+
+    return hf;
+  }
+
+  void finalize() { delete (this); }
+
+  static std::pair<std::multimap<int, Node *>, std::multimap<int, Node *>>
+  preparData(Vec<int_bool> &data) {
     std::map<int, int> w;
     std::map<int, int> b;
 
@@ -101,11 +159,19 @@ class Huffman {
       }
     }
 
-    std::multimap<int, Node *> new_data;
-    for (auto &i : w) new_data.insert({i.second, Node::create(i.first, false)});
-    for (auto &i : b) new_data.insert({i.second, Node::create(i.first, true)});
+    std::multimap<int, Node *> new_data_white;
+    std::multimap<int, Node *> new_data_black;
 
-    return new_data;
+    // ročno vstavimo WHITE dolžine 0 ( v txt datoteki nimamo dolžin 0, jih pa
+    // potrebujemo pri zapisu )
+    new_data_white.insert({1, Node::create(0, Type::White)});
+
+    for (auto &i : w)
+      new_data_white.insert({i.second, Node::create(i.first, Type::White)});
+    for (auto &i : b)
+      new_data_black.insert({i.second, Node::create(i.first, Type::White)});
+
+    return {new_data_white, new_data_black};
   }
 
   static Node *huffmanTree(std::multimap<int, Node *> &data) {
@@ -126,12 +192,37 @@ class Huffman {
     return data.begin()->second;
   }
 
+  Vec<std::string> encode() {
+    Vec<std::string> encoded_data(data.size(), std::vector<std::string>());
+
+    for (int i = 0; i < data.size(); ++i) {
+      int ind_offset = 0;
+      if (data[i][0].second == Type::White) {
+        encoded_data[i].assign(data[i].size() + 1, encode_white[0]);
+      } else {
+        encoded_data[i].assign(data[i].size() + 2, encode_white[0]);
+        ind_offset = 1;
+      }
+
+      for (int j = 0; j < data[i].size(); ++j) {
+        if (data[i][j].second == Type::Black) {
+          encoded_data[i][j + ind_offset] = encode_black[data[i][j].first];
+        } else {
+          encoded_data[i][j + ind_offset] = encode_white[data[i][j].first];
+        }
+      }
+      encoded_data[i].back() = EOL;
+    }
+
+    return encoded_data;
+  }
+
   static Vec<std::string> encode(Vec<int_bool> &data) {
     Vec<std::string> encoded_data(data.size(), std::vector<std::string>());
 
     for (int i = 0; i < data.size(); ++i) {
       int ind_offset = 0;
-      if (!data[i][0].second) {
+      if (data[i][0].second == Type::White) {
         encoded_data[i].assign(data[i].size() + 1, WHITE[0]);
       } else {
         encoded_data[i].assign(data[i].size() + 2, WHITE[0]);
@@ -142,7 +233,7 @@ class Huffman {
         int offset = data[i][j].first / MOD;
         int bits = data[i][j].first % MOD;
 
-        if (data[i][j].second) {
+        if (data[i][j].second == Type::Black) {
           encoded_data[i][j + ind_offset] =
               (offset > 0 ? WHITE[MOD + offset] : "") + WHITE[bits];
         } else {
@@ -454,25 +545,46 @@ class RLE {
     return encoded_data;
   }
 
-  static void testRLE() {
-    std::srand(123);
-    Vec<bool> A(10, std::vector<bool>(10, 0));
+  static void testRLE(int SIZE, bool izpis) {
+    // std::srand(123);
+    std::srand(789);
+    Vec<bool> A(SIZE, std::vector<bool>(SIZE, 0));
 
-    for (int i = 0; i < 10; ++i) {
-      for (int j = 0; j < 10; ++j) {
+    for (int i = 0; i < SIZE; ++i) {
+      for (int j = 0; j < SIZE; ++j) {
         A[i][j] = std::rand() % 2;
-        std::cout << A[i][j] << " ";
+        if (izpis) std::cout << A[i][j] << " ";
       }
-      std::cout << std::endl;
+      if (izpis) std::cout << std::endl;
     }
 
     auto a = RLE::encode(A);
 
-    for (auto &i : a) {
-      for (auto &j : i) std::cout << j.first << "" << j.second;
-      std::cout << "\n";
+
+    if (izpis) {
+      for (auto &i : a) {
+        for (auto &j : i)
+          std::cout << "(" << j.first << ", " << j.second << ") ";
+        std::cout << "\n";
+      }
+      std::cout << std::flush;
     }
-    std::cout << std::flush;
+
+    Huffman *hf = Huffman::initialize(a);
+    auto enc = hf->encode();
+
+    if (izpis) {
+      std::cout << "(0, WHITE) = " << hf->encode_white[0] << std::endl;
+      for (auto &i : enc) {
+        for (auto &j : i) {
+          std::cout << j << " ";
+        }
+        std::cout << "\n";
+      }
+      std::cout << std::flush;
+    }
+
+    hf->finalize();
   }
 };
 
