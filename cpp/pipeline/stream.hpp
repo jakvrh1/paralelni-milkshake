@@ -37,10 +37,11 @@ template <typename T> class Stream : public Consumer<T>, public Producer<T> {
       // Zaklenemo mutex in dodamo [product] v vrsto
       pthread_mutex_lock(&mutex);
       queue.push(data);
-      pthread_mutex_unlock(&mutex);
 
       // Prebudimo eno nit, ki bo prevzela podatke iz vrste
       pthread_cond_signal(&cond);
+
+      pthread_mutex_unlock(&mutex);
     }
 
     virtual T consume() {
