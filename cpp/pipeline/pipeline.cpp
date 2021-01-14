@@ -34,7 +34,7 @@ void* read(void* arg) {
 
   for (int i = 0; i < REPS; i++) {
     auto image_data = Input::read("../../assets/1.png");
-    read_stream->push(image_data);
+    read_stream->produce(image_data);
     //printf("Read image %d\n", i + 1);
   }
 
@@ -49,9 +49,9 @@ void* rle(void* arg) {
 
   int i = 0;
   while (true) {
-    auto image_data = stream->in->pop();
+    auto image_data = stream->in->consume();
     auto rle_data = RLE::encode(*image_data);
-    stream->out->push(rle_data);
+    stream->out->produce(rle_data);
     //printf("RLE encoded %d\n", ++i);
   }
 }
@@ -64,9 +64,9 @@ void* huffman(void* arg) {
 
   int i = 0;
   while (true) {
-    auto rle_data = stream->in->pop();
+    auto rle_data = stream->in->consume();
     auto huffman_data = Huffman::encode(rle_data);
-    stream->out->push(huffman_data);
+    stream->out->produce(huffman_data);
     // printf("Huffman encoded %d\n", ++i);
   }
 }
@@ -78,7 +78,7 @@ void* write(void* arg) {
   Stream<Vec<string>>* write_stream = (Stream<Vec<string>>*) arg;
 
   for (int i = 0; i < REPS; i++) {
-    auto huffman_data = write_stream->pop();
+    auto huffman_data = write_stream->consume();
     Output::write("test.txt", huffman_data);
     //printf("Written %d\n", i + 1);
   }
