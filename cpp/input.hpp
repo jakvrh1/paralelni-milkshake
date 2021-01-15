@@ -9,7 +9,7 @@
 #include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "libs/stb_image.h"
 #include "types.hpp"
 
 #define A4_LINES 1145
@@ -20,16 +20,15 @@ class Input {
   public:
 
     /**
-     * Prebere sliko v datoteki z imenom [filename]. Sliko vrne kot vektor 8-bitnih
-     * števil (0 = črna, 1 = bela, ostale vrednosti se ne pojavljajo).
+     * Prebere sliko v datoteki z imenom [filename]. Sliko vrne kot 2D vektor bool.
      */
     static Vec<bool>* read(const char* filename) {
       // Sliko preberemo že kot sivo (število komponent = 1)
       int width, height;
-      unsigned char* data = stbi_load(filename, &width, &height, NULL, 1);
+      unsigned char* image = stbi_load(filename, &width, &height, NULL, 1);
 
       // Preverimo, ali datoteka vsebuje slikovne podatke
-      if (data == nullptr) {
+      if (image == nullptr) {
         throw std::invalid_argument("File is not an image file");
       }
 
@@ -46,9 +45,9 @@ class Input {
       for (int line = 0; line < A4_LINES; line++) {
         for (int pixel = 0; pixel < A4_LINE_LENGTH; pixel++) {
           int idx = line * A4_LINE_LENGTH + pixel;
-          if (data[idx] == 255) {
+          if (image[idx] == 255) {
             (*bits)[line][pixel] = true;
-          } else if (data[idx] != 0) {
+          } else if (image[idx] != 0) {
             throw std::invalid_argument("Image is not black and white");
           }
         }
@@ -56,7 +55,6 @@ class Input {
 
       return bits;
     }
-
 };
 
 #endif
