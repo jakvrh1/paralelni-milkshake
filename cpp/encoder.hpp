@@ -103,13 +103,17 @@ class Huffman {
       return;
     }
 
-    code.push_back('1');
-    encodeTree(node->left, type);
-    code.pop_back();
+    if(node->left != nullptr) {
+      code.push_back('1');
+      encodeTree(node->left, type);
+      code.pop_back();
+    }
 
-    code.push_back('0');
-    encodeTree(node->right, type);
-    code.pop_back();
+    if(node->right != nullptr) {
+      code.push_back('0');
+      encodeTree(node->right, type);
+      code.pop_back();
+    }
 
     node->erase();
   }
@@ -169,7 +173,7 @@ class Huffman {
     for (auto &i : w)
       new_data_white.insert({i.second, Node::create(i.first, Type::White)});
     for (auto &i : b)
-      new_data_black.insert({i.second, Node::create(i.first, Type::White)});
+      new_data_black.insert({i.second, Node::create(i.first, Type::Black)});
 
     return {new_data_white, new_data_black};
   }
