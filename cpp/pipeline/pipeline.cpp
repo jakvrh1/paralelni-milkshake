@@ -7,8 +7,9 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include "../encoder.hpp"
 #include "../input.hpp"
+#include "../rle.hpp"
+#include "../huffman.hpp"
 #include "../output.hpp"
 #include "../stream.hpp"
 

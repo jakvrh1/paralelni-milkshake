@@ -36,21 +36,21 @@ void testRLE(int SIZE, bool izpis) {
 
     Huffman *hf = Huffman::initialize(a);
     
-    auto hd = hf->header();
+    // auto hd = hf->header();
     auto enc = hf->encode();
 
-    Huffman *hf2 = Huffman::initialize(hd);
+    // Huffman *hf2 = Huffman::initialize(hd);
 
     if (izpis) {
       // auto enc = hf->encode();
-      std::cout << "\n";
+      /* std::cout << "\n";
       for(auto &i: hd.first) {
         std::cout << i << " ";
       }
       std::cout << "\n";
       for(auto &i: hd.second) {
         std::cout << i << " ";
-      }
+      } */
       std::cout << "\n(0, WHITE) = " << hf->encode_white[0] << std::endl;
       for (auto &i : enc) {
         for (auto &j : i) {
