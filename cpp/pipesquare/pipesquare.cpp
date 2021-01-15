@@ -94,7 +94,6 @@ void* write(void* arg) {
  * Glavna nit
  */
 int main(int argc, char const *argv[]) {
-  mutex_read = PTHREAD_MUTEX_INITIALIZER;
   mutex_write = PTHREAD_MUTEX_INITIALIZER;
 
   Stream<string> input_stream;
