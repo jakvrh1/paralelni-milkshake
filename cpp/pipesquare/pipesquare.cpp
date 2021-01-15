@@ -17,9 +17,9 @@
 
 using namespace std;
 
-pthread_mutex_t mutex_read;
-int reads = 0;
-
+// ker vec niti pise, moramo uporabiti mutex,
+// da povecujemo stevec [writes], dokler
+// ne dosezemo stevila REPS
 pthread_mutex_t mutex_write;
 int writes = 0;
 

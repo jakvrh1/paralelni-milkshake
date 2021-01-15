@@ -6,7 +6,6 @@
 #include <random>
 #include <pthread.h>
 #include <unistd.h>
-#include <queue>
 
 #include "../encoder.hpp"
 #include "../input.hpp"
