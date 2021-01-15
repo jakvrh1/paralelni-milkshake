@@ -23,26 +23,16 @@ int reads = 0;
 pthread_mutex_t mutex_write;
 int writes = 0;
 
-/**
- * Struct za drugo in tretjo stopnjo cevovoda, kjer podatki prihajajo
- * po enem streamu in odhajajo po drugem.
- */
-template <typename T, typename U>
-struct io_stream {
-  Stream<T>* in;
-  Stream<U>* out;
-};
-
 /* 
  * Funkcija za niti, ki berejo.
  */
 void* read(void* arg) {
-  io_stream<string, Vec<bool>*>* stream = (io_stream<string, Vec<bool>*>*) arg;
+  ProduceConsumeStream<string, Vec<bool>*>* stream = (ProduceConsumeStream<string, Vec<bool>*>*) arg;
 
   while (true) {
-    auto filename = stream->in->consume(); 
+    auto filename = stream->consume(); 
     auto image_data = Input::read(filename.c_str());
-    stream->out->produce(image_data);
+    stream->produce(image_data);
   }
 
   return nullptr;
@@ -52,13 +42,12 @@ void* read(void* arg) {
  * Funkcija za niti, ki prebrane podatke kodirajo z RLE.
  */ 
 void* rle(void* arg) {
-  io_stream<Vec<bool>*, Vec<int_bool>>* stream = (io_stream<Vec<bool>*, Vec<int_bool>>*) arg;
+  ProduceConsumeStream<Vec<bool>*, Vec<int_bool>>* stream = (ProduceConsumeStream<Vec<bool>*, Vec<int_bool>>*) arg;
 
-  int i = 0;
   while (true) {
-    auto image_data = stream->in->consume();
+    auto image_data = stream->consume();
     auto rle_data = RLE::encode(*image_data);
-    stream->out->produce(rle_data);
+    stream->produce(rle_data);
   }
 }
 
@@ -66,13 +55,13 @@ void* rle(void* arg) {
  * Funkcija za niti, ki RLE podatke kodirajo s huffmanom.
  */  
 void* huffman(void* arg) {
-  io_stream<Vec<int_bool>, Vec<string>>* stream = (io_stream<Vec<int_bool>, Vec<string>>*) arg;
+  ProduceConsumeStream<Vec<int_bool>, Vec<string>>* stream = (ProduceConsumeStream<Vec<int_bool>, Vec<string>>*) arg;
 
-  int i = 0;
   while (true) {
-    auto rle_data = stream->in->consume();
-    auto huffman_data = Huffman::encode(rle_data);
-    stream->out->produce(huffman_data);
+    auto rle_data = stream->consume();
+    Huffman *hf = Huffman::initialize(rle_data);
+    auto huffman_data = hf->encode();
+    stream->produce(huffman_data);
   }
 }
 
@@ -95,7 +84,6 @@ void* write(void* arg) {
 
     auto huffman_data = write_stream->consume();
     Output::write("test.txt", huffman_data);
-    //printf("Written %d\n", i + 1);
   }
 
   // S tem se bo program zaključil (glavna nit čaka na join)
@@ -115,36 +103,30 @@ int main(int argc, char const *argv[]) {
   Stream<Vec<string>> write_stream;
 
   // Stream za prvo stopnjo cevovoda, image reading
-  io_stream<string, Vec<bool>*> read_io_stream;
-  read_io_stream.in = &input_stream;
-  read_io_stream.out = &bit_stream;
+  ProduceConsumeStream<string, Vec<bool>*> read_stream(&input_stream, &bit_stream);  
 
   // Stream za drugo stopnjo cevovoda, run length encoding
-  io_stream<Vec<bool>*, Vec<int_bool>> rle_io_stream;
-  rle_io_stream.in = &bit_stream;
-  rle_io_stream.out = &encoded_stream;
+  ProduceConsumeStream<Vec<bool>*, Vec<int_bool>> rle_stream(&bit_stream, &encoded_stream);
 
   // Stream za tretjo stopnjo cevovoda, huffman encoding
-  io_stream<Vec<int_bool>, Vec<string>> huffman_io_stream;
-  huffman_io_stream.in = &encoded_stream;
-  huffman_io_stream.out = &write_stream;
+  ProduceConsumeStream<Vec<int_bool>, Vec<string>> huffman_stream(&encoded_stream, &write_stream);
 
   pthread_t read_thread_1;
-  pthread_create(&read_thread_1, NULL, read, &read_io_stream);
+  pthread_create(&read_thread_1, NULL, read, &read_stream);
   pthread_t read_thread_2;
-  pthread_create(&read_thread_2, NULL, read, &read_io_stream);
+  pthread_create(&read_thread_2, NULL, read, &read_stream);
   pthread_t read_thread_3;
-  pthread_create(&read_thread_3, NULL, read, &read_io_stream);
+  pthread_create(&read_thread_3, NULL, read, &read_stream);
 
   pthread_t rle_thread_1;
-  pthread_create(&rle_thread_1, NULL, rle, &rle_io_stream);
+  pthread_create(&rle_thread_1, NULL, rle, &rle_stream);
   pthread_t rle_thread_2;
-  pthread_create(&rle_thread_2, NULL, rle, &rle_io_stream);
+  pthread_create(&rle_thread_2, NULL, rle, &rle_stream);
 
   pthread_t huffman_thread_1;
-  pthread_create(&huffman_thread_1, NULL, huffman, &huffman_io_stream);
+  pthread_create(&huffman_thread_1, NULL, huffman, &huffman_stream);
   pthread_t huffman_thread_2;
-  pthread_create(&huffman_thread_2, NULL, huffman, &huffman_io_stream);
+  pthread_create(&huffman_thread_2, NULL, huffman, &huffman_stream);
 
   pthread_t write_thread_1;
   pthread_create(&write_thread_1, NULL, write, &write_stream);

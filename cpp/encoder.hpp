@@ -117,8 +117,8 @@ class Huffman {
  public:
   Vec<int_bool> data;
 
-  // Node *white_tree;
-  // Node *black_tree;
+  Node *white_tree;
+  Node *black_tree;
 
   std::unordered_map<int, std::string> encode_white;
   std::unordered_map<int, std::string> encode_black;
@@ -129,16 +129,13 @@ class Huffman {
 
     auto huffman_tree_root_node = Huffman::preparData(hf->data);
 
-    // hf->white_tree = Huffman::huffmanTree(huffman_tree_root_node.first);
-    // hf->black_tree = Huffman::huffmanTree(huffman_tree_root_node.second);
+    hf->white_tree = Huffman::huffmanTree(huffman_tree_root_node.first);
+    hf->black_tree = Huffman::huffmanTree(huffman_tree_root_node.second);
+    hf->encodeTree(hf->white_tree, Type::White);
+    hf->encodeTree(hf->black_tree, Type::Black);
 
-    hf->encodeTree(Huffman::huffmanTree(huffman_tree_root_node.first),
-                   Type::White);
-    hf->encodeTree(Huffman::huffmanTree(huffman_tree_root_node.second),
-                   Type::Black);
-
-    // hf->encodeTree(hf->white_tree, Type::White);
-    // hf->encodeTree(hf->black_tree, Type::Black);
+    // hf->encodeTree(Huffman::huffmanTree(huffman_tree_root_node.first), Type::White);
+    // hf->encodeTree(Huffman::huffmanTree(huffman_tree_root_node.second), Type::Black);
 
     return hf;
   }
@@ -169,7 +166,7 @@ class Huffman {
     for (auto &i : w)
       new_data_white.insert({i.second, Node::create(i.first, Type::White)});
     for (auto &i : b)
-      new_data_black.insert({i.second, Node::create(i.first, Type::White)});
+      new_data_black.insert({i.second, Node::create(i.first, Type::Black)});
 
     return {new_data_white, new_data_black};
   }

@@ -4,23 +4,8 @@
 #include <queue>
 #include <pthread.h>
 
-template <typename T>
-class Consumer {
-
-  public:
-    virtual ~Consumer() {}
-    virtual T consume();
-};
-
-template <typename T>
-class Producer {
-
-  public:
-    virtual ~Producer() {}
-    virtual void produce(T product);
-};
-
-template <typename T> class Stream : public Consumer<T>, public Producer<T> {
+template <typename T> 
+class Stream {
 
   private:
     std::queue<T> queue;
@@ -33,7 +18,7 @@ template <typename T> class Stream : public Consumer<T>, public Producer<T> {
       cond = PTHREAD_COND_INITIALIZER;
     }
 
-    virtual void produce(T data) {
+    void produce(T data) {
       // Zaklenemo mutex in dodamo [product] v vrsto
       pthread_mutex_lock(&mutex);
       queue.push(data);
@@ -44,7 +29,7 @@ template <typename T> class Stream : public Consumer<T>, public Producer<T> {
       pthread_mutex_unlock(&mutex);
     }
 
-    virtual T consume() {
+    T consume() {
       // Zaklenemo mutex in počakamo, dokler queue ni prazen
       pthread_mutex_lock(&mutex);
       while (queue.empty()) {
@@ -56,6 +41,28 @@ template <typename T> class Stream : public Consumer<T>, public Producer<T> {
 
       pthread_mutex_unlock(&mutex);
       return data;
+    }
+};
+
+template <typename T, typename U> 
+class ProduceConsumeStream {
+
+  private:
+    Stream<T> *consumer;
+    Stream<U> *producer;
+
+  public:
+    ProduceConsumeStream(Stream<T> *consumer, Stream<U> *producer) {
+      this->consumer = consumer;
+      this->producer = producer;
+    }
+
+    T consume() {
+      return consumer->consume();
+    }
+
+    void produce(U data) {
+      return producer->produce(data);
     }
 };
 
