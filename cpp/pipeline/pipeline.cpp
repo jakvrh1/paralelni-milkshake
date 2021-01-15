@@ -10,10 +10,9 @@
 #include "../encoder.hpp"
 #include "../input.hpp"
 #include "../output.hpp"
-#include "stream.hpp"
+#include "../stream.hpp"
 
-//#define REPS 250
-#define REPS 10
+#define REPS 250
 
 using namespace std;
 
