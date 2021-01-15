@@ -1,11 +1,5 @@
-/**
- * Specifikacija verižnega kodiranja in Huffmanovega kanoničnega kodiranja.
- * V štiristopenjskem cevovodu je verižno kodiranje druga stopnja in
- * Huffmanovo kanonično kodiranje tretja stopnja.
- */
-
-#ifndef ENCODER_HPP
-#define ENCODER_HPP
+#ifndef HUFFMAN_HPP
+#define HUFFMAN_HPP
 
 #include <iostream>
 #include <map>
@@ -16,70 +10,7 @@
 #include <vector>
 
 #include "types.hpp"
-
-enum Type : bool { White = false, Black = true };
-
-class Node {
- public:
-  int value = 0;
-  bool bit;
-  Node *left = nullptr;
-  Node *right = nullptr;
-
-  static Node *create(int value, int bit) {
-    Node *new_node = new Node();
-    new_node->value = value;
-    new_node->bit = bit;
-    return new_node;
-  }
-
-  static Node *create() { return new Node(); }
-
-  void erase() { delete this; }
-
-  bool isLeaf() {
-    if (left == nullptr && right == nullptr) return true;
-    return false;
-  }
-
-  void disp() { ascii_rep("", this); }
-
-  void ascii_rep(std::string s, Node *node) {
-    if (node->isLeaf()) {
-      std::cout << s << "---- " << node->value << " " << node->bit << std::endl;
-      return;
-    }
-
-    ascii_rep(s + "    ", node->right);
-    std::cout << s << "----|\n";
-    ascii_rep(s + "    ", node->left);
-  }
-
-  void preorderTraverse() {
-    if (isLeaf()) {
-      std::cout << value << " " << bit << std::endl;
-      return;
-    }
-    if (left != nullptr) left->preorderTraverse();
-    if (right != nullptr) right->preorderTraverse();
-  }
-
-  void traverse() {
-    std::queue<Node *> q;
-    q.push(this);
-
-    while (!q.empty()) {
-      auto t = q.front();
-      if (t->left != nullptr) q.push(t->left);
-      if (t->right != nullptr) q.push(t->right);
-
-      if (t->isLeaf()) {
-        std::cout << t->value << " " << t->bit << std::endl;
-      }
-      q.pop();
-    }
-  }
-};
+#include "rle.hpp"
 
 class Huffman {
  private:
@@ -87,16 +18,29 @@ class Huffman {
 
   // bulding encoding table and freeing nodes
   std::string code = "";
+  std::vector<int> white_tree, black_tree;
+  int cnt = 0;
   void encodeTree(Node *node, const Type &type) {
     if (node->isLeaf()) {
-      if (type == Type::White)
+      if (type == Type::White) {
+        white_tree.push_back(cnt);
+        cnt = 0;
+        white_tree.push_back(node->value);
+
         encode_white.insert({node->value, code});
-      else
+      }
+      else {
+        black_tree.push_back(cnt);
+        cnt = 0;
+        black_tree.push_back(node->value);
+
         encode_black.insert({node->value, code});
+      }
 
       node->erase();
       return;
     }
+    cnt++;
 
     if (node->left != nullptr) {
       code.push_back('1');
@@ -111,6 +55,18 @@ class Huffman {
     }
 
     node->erase();
+  }
+
+  int temp = 0;
+  void preorderTraverse(Node *node) {
+    std::cout << node->value << " ";
+    std::cout << "- ";
+    if (node->isLeaf()) {
+      std::cout << " x ";
+      return;
+    }
+    if (node->left != nullptr) preorderTraverse(node->left);
+    if (node->right != nullptr) preorderTraverse(node->right);
   }
 
  public:
@@ -128,6 +84,11 @@ class Huffman {
                    Type::White);
     hf->encodeTree(Huffman::huffmanTree(huffman_tree_root_node.second),
                    Type::Black);
+
+    for(auto &i : hf->white_tree) {
+      std::cout << i << " ";
+    }
+    std::cout << std::endl;
 
     return hf;
   }
@@ -206,73 +167,5 @@ class Huffman {
 };
 
 const std::string Huffman::EOL = "000000000001";
-
-class RLE {
- public:
-  static Vec<int_bool> encode(Vec<bool> &data) {
-    Vec<int_bool> encoded_data(data.size(), std::vector<int_bool>());
-
-    for (int line = 0; line < data.size(); ++line) {
-      if (data[line].back() == Type::Black)
-        data[line].push_back(Type::White);
-      else
-        data[line].push_back(Type::Black);
-
-      int cnt = 0;
-      for (int i = 0; i < data[line].size() - 1; ++i) {
-        if (data[line][i] == data[line][i + 1]) {
-          cnt++;
-        } else {
-          encoded_data[line].push_back({cnt + 1, data[line][i]});
-          cnt = 0;
-        }
-      }
-      data[line].pop_back();
-    }
-    return encoded_data;
-  }
-
-  static void testRLE(int SIZE, bool izpis) {
-    // std::srand(123);
-    std::srand(789);
-    Vec<bool> A(SIZE, std::vector<bool>(SIZE, 0));
-
-    for (int i = 0; i < SIZE; ++i) {
-      for (int j = 0; j < SIZE; ++j) {
-        A[i][j] = std::rand() % 2;
-        if (izpis) std::cout << A[i][j] << " ";
-      }
-      if (izpis) std::cout << std::endl;
-    }
-
-    auto a = RLE::encode(A);
-
-    if (izpis) {
-      for (auto &i : a) {
-        for (auto &j : i)
-          std::cout << "(" << j.first << ", " << j.second << ") ";
-        std::cout << "\n";
-      }
-      std::cout << std::flush;
-    }
-
-    Huffman *hf = Huffman::initialize(a);
-    auto enc = hf->encode();
-
-    if (izpis) {
-      // auto enc = hf->encode();
-      std::cout << "(0, WHITE) = " << hf->encode_white[0] << std::endl;
-      for (auto &i : enc) {
-        for (auto &j : i) {
-          std::cout << j << " ";
-        }
-        std::cout << "\n";
-      }
-      std::cout << std::flush;
-    }
-
-    hf->finalize();
-  }
-};
 
 #endif
