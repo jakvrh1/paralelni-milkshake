@@ -11,7 +11,7 @@
 #include "../encoder.hpp"
 #include "../input.hpp"
 #include "../output.hpp"
-#include "../pipeline/stream.hpp"
+#include "../stream.hpp"
 
 #define REPS 250
 
