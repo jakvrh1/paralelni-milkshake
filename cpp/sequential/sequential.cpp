@@ -32,8 +32,15 @@ int main(int argc, char const *argv[]) {
   }
   */
 
+  std::srand(123);
+  for(int i = 0; i < 10; ++i) {
+    RLE::testRLE(1000, false);
+  }
+
+  /*
   while(true) {
     RLE::testRLE(10, true);
   }
+  */
   return 0;
 }

@@ -12,7 +12,8 @@
 #include "../output.hpp"
 #include "stream.hpp"
 
-#define REPS 250
+//#define REPS 250
+#define REPS 10
 
 using namespace std;
 
@@ -53,8 +54,8 @@ void* huffman(void* arg) {
   while (true) {
     auto rle_data = stream->consume();
     Huffman *hf = Huffman::initialize(rle_data);
-    auto huffman_data = hf->encode();
-    stream->produce(huffman_data);
+    stream->produce(hf->encode());
+    hf->finalize();
   }
 }
 

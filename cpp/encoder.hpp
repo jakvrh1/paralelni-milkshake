@@ -17,6 +17,8 @@
 
 #include "types.hpp"
 
+enum Type : bool { White = false, Black = true };
+
 class Node {
  public:
   int value = 0;
@@ -33,8 +35,7 @@ class Node {
 
   static Node *create() { return new Node(); }
 
-  // TODO free whole tree!!! Now you only free one node
-  void erase() { delete (this); }
+  void erase() { delete this; }
 
   bool isLeaf() {
     if (left == nullptr && right == nullptr) return true;
@@ -89,9 +90,10 @@ class Huffman {
   static const std::string BLACK[];
   static const std::string BLACK_SORTED[];
 
-  enum Type : bool { White = false, Black = true };
+  // enum Type : bool { White = false, Black = true };
 
   std::string code = "";
+  // bulding encoding table and freeing nodes
   void encodeTree(Node *node, const Type &type) {
     if (node->isLeaf()) {
       if (type == Type::White)
@@ -103,44 +105,41 @@ class Huffman {
       return;
     }
 
-    code.push_back('1');
-    encodeTree(node->left, type);
-    code.pop_back();
+    if (node->left != nullptr) {
+      code.push_back('1');
+      encodeTree(node->left, type);
+      code.pop_back();
+    }
 
-    code.push_back('0');
-    encodeTree(node->right, type);
-    code.pop_back();
+    if (node->right != nullptr) {
+      code.push_back('0');
+      encodeTree(node->right, type);
+      code.pop_back();
+    }
 
     node->erase();
   }
 
  public:
-  Vec<int_bool> data;
-
-  Node *white_tree;
-  Node *black_tree;
-
+  Vec<int_bool> rle_data;
   std::unordered_map<int, std::string> encode_white;
   std::unordered_map<int, std::string> encode_black;
 
-  static Huffman *initialize(Vec<int_bool> &data) {
+  static Huffman *initialize(Vec<int_bool> &rle_data) {
     Huffman *hf = new Huffman();
-    hf->data = data;
+    hf->rle_data = rle_data;
 
-    auto huffman_tree_root_node = Huffman::preparData(hf->data);
+    auto huffman_tree_root_node = Huffman::preparData(hf->rle_data);
 
-    hf->white_tree = Huffman::huffmanTree(huffman_tree_root_node.first);
-    hf->black_tree = Huffman::huffmanTree(huffman_tree_root_node.second);
-    hf->encodeTree(hf->white_tree, Type::White);
-    hf->encodeTree(hf->black_tree, Type::Black);
-
-    // hf->encodeTree(Huffman::huffmanTree(huffman_tree_root_node.first), Type::White);
-    // hf->encodeTree(Huffman::huffmanTree(huffman_tree_root_node.second), Type::Black);
+    hf->encodeTree(Huffman::huffmanTree(huffman_tree_root_node.first),
+                   Type::White);
+    hf->encodeTree(Huffman::huffmanTree(huffman_tree_root_node.second),
+                   Type::Black);
 
     return hf;
   }
 
-  void finalize() { delete (this); }
+  void finalize() { delete this; }
 
   static std::pair<std::multimap<int, Node *>, std::multimap<int, Node *>>
   preparData(Vec<int_bool> &data) {
@@ -171,44 +170,42 @@ class Huffman {
     return {new_data_white, new_data_black};
   }
 
-  static Node *huffmanTree(std::multimap<int, Node *> &data) {
-    while (data.size() > 1) {
-      auto p1 = data.begin();
-      auto p2 = ++data.begin();
-
-      data.erase(p1);
-      data.erase(p2);
+  static Node *huffmanTree(std::multimap<int, Node *> &processed_rle_data) {
+    while (processed_rle_data.size() > 1) {
+      auto p1 = processed_rle_data.begin();
+      auto p2 = ++processed_rle_data.begin();
 
       Node *new_node = Node::create();
       new_node->left = p1->second;
       new_node->right = p2->second;
       new_node->value = p1->first + p2->first;
 
-      data.insert({new_node->value, new_node});
+      processed_rle_data.insert({new_node->value, new_node});
+
+      processed_rle_data.erase(p1);
+      processed_rle_data.erase(p2);
     }
-    return data.begin()->second;
+    return processed_rle_data.begin()->second;
   }
 
   Vec<std::string> encode() {
-    Vec<std::string> encoded_data(data.size(), std::vector<std::string>());
+    Vec<std::string> encoded_data(rle_data.size(), std::vector<std::string>());
 
-    for (int i = 0; i < data.size(); ++i) {
-      int ind_offset = 0;
-      if (data[i][0].second == Type::White) {
-        encoded_data[i].assign(data[i].size() + 1, encode_white[0]);
+    for (int i = 0; i < rle_data.size(); ++i) {
+      if (rle_data[i][0].second == Type::White) {
+        encoded_data[i].reserve(rle_data[i].size() + 1);
       } else {
-        encoded_data[i].assign(data[i].size() + 2, encode_white[0]);
-        ind_offset = 1;
+        encoded_data[i].reserve(rle_data[i].size() + 2);
+        encoded_data[i].push_back(encode_white[0]);
       }
 
-      for (int j = 0; j < data[i].size(); ++j) {
-        if (data[i][j].second == Type::Black) {
-          encoded_data[i][j + ind_offset] = encode_black[data[i][j].first];
-        } else {
-          encoded_data[i][j + ind_offset] = encode_white[data[i][j].first];
-        }
+      for (int j = 0; j < rle_data[i].size(); ++j) {
+        if (rle_data[i][j].second == Type::Black)
+          encoded_data[i].push_back(encode_black[rle_data[i][j].first]);
+        else
+          encoded_data[i].push_back(encode_white[rle_data[i][j].first]);
       }
-      encoded_data[i].back() = EOL;
+      encoded_data[i].push_back(EOL);
     }
 
     return encoded_data;
@@ -522,11 +519,10 @@ class RLE {
     Vec<int_bool> encoded_data(data.size(), std::vector<int_bool>());
 
     for (int line = 0; line < data.size(); ++line) {
-      if (data[line][data[line].size() - 1]) {
-        data[line].push_back(false);
-      } else {
-        data[line].push_back(true);
-      }
+      if (data[line].back() == Type::Black)
+        data[line].push_back(Type::White);
+      else
+        data[line].push_back(Type::Black);
 
       int cnt = 0;
       for (int i = 0; i < data[line].size() - 1; ++i) {
@@ -557,7 +553,6 @@ class RLE {
 
     auto a = RLE::encode(A);
 
-
     if (izpis) {
       for (auto &i : a) {
         for (auto &j : i)
@@ -571,6 +566,7 @@ class RLE {
     auto enc = hf->encode();
 
     if (izpis) {
+      // auto enc = hf->encode();
       std::cout << "(0, WHITE) = " << hf->encode_white[0] << std::endl;
       for (auto &i : enc) {
         for (auto &j : i) {
