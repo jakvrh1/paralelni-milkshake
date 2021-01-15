@@ -6,6 +6,7 @@
 #ifndef INPUT_HPP
 #define INPUT_HPP
 
+#include <stdexcept>
 #include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
