@@ -39,8 +39,10 @@ void testRLE(int SIZE, bool izpis) {
     // auto hd = hf->header();
     auto enc = hf->encode();
 
-    // Huffman *hf2 = Huffman::initialize(hd);
+    Huffman *hf2 = Huffman::initialize(hd, enc);
+    auto enc1 = hf2->decode(enc);
 
+    /*
     if (izpis) {
       // auto enc = hf->encode();
       /* std::cout << "\n";
@@ -60,7 +62,41 @@ void testRLE(int SIZE, bool izpis) {
       }
       std::cout << std::flush;
     }
+    */
+    if(izpis) {
+      std::cout << "TLE" << std::endl;
+      for(auto &i: hf2->decode_white)  {
+        std::cout << "("<< i.first << ", " << i.second << ") ";
+      }
+      std::cout << std::endl;
+      std::cout << "TLE" << std::endl;
+      for(auto &i: hf2->decode_black)  {
+        std::cout << "("<< i.first << ", " << i.second << ") ";
+      }
+      std::cout << std::endl;
+      
+      std::cout << "HF1\n";
+      std::cout << "\n(0, WHITE) = " << hf->encode_white[0] << std::endl;
+      for (auto &i : enc) {
+        for (auto &j : i) {
+          std::cout << j << " ";
+        }
+        std::cout << "\n";
+      }
+      std::cout << "HF2\n";
+      std::cout << "\n(0, WHITE) = " << hf->encode_white[0] << std::endl;
+      for (auto &i : enc1) {
+        for (auto &j : i) {
+          std::cout << j << " ";
+        }
+        std::cout << "\n";
+      }
+      std::cout << std::flush;
+      
+    }
+
     
+    hf2->finalize();
     hf->finalize();
   }
 
