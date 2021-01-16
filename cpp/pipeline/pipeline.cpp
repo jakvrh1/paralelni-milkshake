@@ -71,7 +71,6 @@ void* write(void* arg) {
     auto key = p.first;
     auto huffman_data = p.second;
 
-    cout << "Writing " << key << endl;
     Output::write("test.txt", huffman_data);
   }
 
@@ -88,7 +87,6 @@ void* write_ordered(void* arg) {
     auto key = p.first;
     auto huffman_data = p.second;
 
-    cout << "Writing " << key << endl;
     Output::write("test.txt", huffman_data);
   }
 
