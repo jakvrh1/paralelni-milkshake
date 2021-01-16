@@ -2,6 +2,7 @@
 #define TYPES_HPP
 
 #include <vector>
+#include <queue>
 
 template <typename T> 
 using Vec = std::vector<std::vector<T>>;
