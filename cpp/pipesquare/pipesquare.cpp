@@ -24,45 +24,48 @@ using namespace std;
 pthread_mutex_t mutex_write;
 int writes = 0;
 
-/* 
- * Funkcija za niti, ki berejo.
- */
+// Funkcija za niti, ki berejo.
 void* read(void* arg) {
-  ProduceConsumeStream<string, Vec<bool>*>* stream = (ProduceConsumeStream<string, Vec<bool>*>*) arg;
+  PipelineStage<int, string, Vec<bool>*>* stage = (PipelineStage<int, string, Vec<bool>*>*) arg;
 
   while (true) {
-    auto filename = stream->consume(); 
+    auto p = stage->consume(); 
+    auto key = p.first;
+    auto filename = p.second;
+
     auto image_data = Input::read(filename.c_str());
-    stream->produce(image_data);
+    stage->produce(key, image_data);
   }
 
   return nullptr;
 }
 
-/*
- * Funkcija za niti, ki prebrane podatke kodirajo z RLE.
- */ 
+// Funkcija za niti, ki prebrane podatke kodirajo z RLE. 
 void* rle(void* arg) {
-  ProduceConsumeStream<Vec<bool>*, Vec<int_bool>>* stream = (ProduceConsumeStream<Vec<bool>*, Vec<int_bool>>*) arg;
+  PipelineStage<int, Vec<bool>*, Vec<int_bool>>* stage = (PipelineStage<int, Vec<bool>*, Vec<int_bool>>*) arg;
 
   while (true) {
-    auto image_data = stream->consume();
+    auto p = stage->consume(); 
+    auto key = p.first;
+    auto image_data = p.second;
+
     auto rle_data = RLE::encode(*image_data);
-    stream->produce(rle_data);
+    stage->produce(key, rle_data);
   }
 }
 
-/*
- * Funkcija za niti, ki RLE podatke kodirajo s huffmanom.
- */  
+// Funkcija za niti, ki RLE podatke kodirajo s huffmanom.  
 void* huffman(void* arg) {
-  ProduceConsumeStream<Vec<int_bool>, Vec<string>>* stream = (ProduceConsumeStream<Vec<int_bool>, Vec<string>>*) arg;
+  PipelineStage<int, Vec<int_bool>, Vec<string>>* stage = (PipelineStage<int, Vec<int_bool>, Vec<string>>*) arg;
 
   while (true) {
-    auto rle_data = stream->consume();
+    auto p = stage->consume(); 
+    auto key = p.first;
+    auto rle_data = p.second;
+
     Huffman *hf = Huffman::initialize(rle_data);
-    auto huffman_data = hf->encode();
-    stream->produce(huffman_data);
+    stage->produce(key, hf->encode());
+    hf->finalize();
   }
 }
 
@@ -70,7 +73,7 @@ void* huffman(void* arg) {
  * Funkcija za niti, ki berejo.
  */
 void* write(void* arg) {
-  Stream<Vec<string>>* write_stream = (Stream<Vec<string>>*) arg;
+  PipelineStage<int, Vec<string>, void>* stage = (PipelineStage<int, Vec<string>, void>*) arg;
 
   while (true) {
 
@@ -83,7 +86,11 @@ void* write(void* arg) {
     }
     pthread_mutex_unlock(&mutex_write);
 
-    auto huffman_data = write_stream->consume();
+    auto p = stage->consume(); 
+    auto key = p.first;
+    auto huffman_data = p.second;
+
+    cout << "Writing " << key << endl;
     Output::write("test.txt", huffman_data);
   }
 
@@ -97,47 +104,62 @@ void* write(void* arg) {
 int main(int argc, char const *argv[]) {
   mutex_write = PTHREAD_MUTEX_INITIALIZER;
 
-  Stream<string> input_stream;
-  Stream<Vec<bool>*> bit_stream;
-  Stream<Vec<int_bool>> encoded_stream;
-  Stream<Vec<string>> write_stream;
+  int num_read = 1;
+  if (argc >= 2) num_read = atoi(argv[1]);
+  printf("Reading: %d thread(s)\n", num_read);
 
-  // Stream za prvo stopnjo cevovoda, image reading
-  ProduceConsumeStream<string, Vec<bool>*> read_stream(&input_stream, &bit_stream);  
+  int num_rle = 1;
+  if (argc >= 3) num_rle = atoi(argv[2]);
+  printf("RLE: %d thread(s)\n", num_rle);
 
-  // Stream za drugo stopnjo cevovoda, run length encoding
-  ProduceConsumeStream<Vec<bool>*, Vec<int_bool>> rle_stream(&bit_stream, &encoded_stream);
+  int num_huffman = 1;
+  if (argc >= 4) num_huffman = atoi(argv[3]);
+  printf("Huffman: %d thread(s)\n", num_huffman);
 
-  // Stream za tretjo stopnjo cevovoda, huffman encoding
-  ProduceConsumeStream<Vec<int_bool>, Vec<string>> huffman_stream(&encoded_stream, &write_stream);
+  int num_write = 1;
+  if (argc >= 5) num_write = atoi(argv[4]);
+  printf("Writing: %d thread(s)\n", num_write);
 
-  pthread_t read_thread_1;
-  pthread_create(&read_thread_1, NULL, read, &read_stream);
-  pthread_t read_thread_2;
-  pthread_create(&read_thread_2, NULL, read, &read_stream);
-  pthread_t read_thread_3;
-  pthread_create(&read_thread_3, NULL, read, &read_stream);
+  bool ordered = false;
+  if (argc >= 6) ordered = atoi(argv[5]);
+  printf("Ordered: %s\n", ordered ? "yes" : "no");
 
-  pthread_t rle_thread_1;
-  pthread_create(&rle_thread_1, NULL, rle, &rle_stream);
-  pthread_t rle_thread_2;
-  pthread_create(&rle_thread_2, NULL, rle, &rle_stream);
+  FifoStream<int, string> input_stream;
+  FifoStream<int, Vec<bool>*> bit_stream;
+  FifoStream<int, Vec<int_bool>> encoded_stream;
+  FifoStream<int, Vec<string>> output_stream;
 
-  pthread_t huffman_thread_1;
-  pthread_create(&huffman_thread_1, NULL, huffman, &huffman_stream);
-  pthread_t huffman_thread_2;
-  pthread_create(&huffman_thread_2, NULL, huffman, &huffman_stream);
+  // Prva stopnja cevovoda, image reading
+  PipelineStage<int, string, Vec<bool>*> read_stage(&input_stream, &bit_stream);
+  pthread_t read_threads[num_read];
+  for (int i = 0; i < num_read; i++)
+    pthread_create(&read_threads[i], NULL, read, &read_stage);
 
-  pthread_t write_thread_1;
-  pthread_create(&write_thread_1, NULL, write, &write_stream);
-  pthread_t write_thread_2;
-  pthread_create(&write_thread_2, NULL, write, &write_stream);
+  // Druga stopnja cevovoda, run length encoding
+  PipelineStage<int, Vec<bool>*, Vec<int_bool>> rle_stage(&bit_stream, &encoded_stream);
+  pthread_t rle_threads[num_rle];
+  for (int i = 0; i < num_rle; i++)
+    pthread_create(&rle_threads[i], NULL, rle, &rle_stage);
+
+  // Tretja stopnja cevovoda, huffman encoding
+  PipelineStage<int, Vec<int_bool>, Vec<string>> huffman_stage(&encoded_stream, &output_stream);
+  pthread_t huffman_threads[num_huffman];
+  for (int i = 0; i < num_huffman; i++)
+    pthread_create(&huffman_threads[i], NULL, huffman, &huffman_stage);
+
+  // Cetrta stopnja cevovoda, writing
+  PipelineStage<int, Vec<string>, void> write_stage(&output_stream);
+  pthread_t write_threads[num_write];
+  for (int i = 0; i < num_write; i++)
+    pthread_create(&write_threads[i], NULL, write, &write_stage);
 
   // V cevovod posljemo delo
   for (int i = 0; i < REPS; i++) 
-    input_stream.produce("../../assets/1.png");
+    input_stream.produce(i, "../../assets/1.png");
 
-  pthread_join(write_thread_1, NULL);
-  pthread_join(write_thread_2, NULL);
+  // Pocakamo, da se pisanje zakljuci
+  for (int i = 0; i < num_write; i++)
+    pthread_join(write_threads[i], NULL);
+
   return 0;
 }

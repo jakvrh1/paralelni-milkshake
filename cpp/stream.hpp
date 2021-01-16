@@ -9,21 +9,45 @@
 
 using namespace std;
 
-template <typename K, typename T> 
+// Abstrakcija za producer-consumer relacijo. Stream<K, T> omogoca, 
+// da na thread-safe nacin proizvajamo (produce) in porabljamo (consume) naloge.
+// 
+// Vsaka naloga je sestavljena iz kljuca K in podatkov T. Kljuc K sluzi
+// kot identifikator za nalogo.
+//
+// Operacija consume lahko sprejme tudi kljuc, ki pove,
+// katero nalogo zelimo porabiti.
+//
+
+template <typename K, typename T>
 class Stream {
 
+  public:
+    virtual void produce(K key, T data);
+    virtual pair<K, T> consume();
+    virtual pair<K, T> consume(K key);
+};
+
+// Implementacija Stream, ki sledi principu FIFO. Vrstni red
+// produciranja je tako enak kot vrstni red porabljanja.
+// 
+// Za hranjenje nalog je uporabljena vrsta parov kljucev in podatkov.
+//
+template <typename K, typename T> 
+class FifoStream : public Stream<K, T> {
+
   private:
-    std::queue<pair<K, T> queue;
+    std::queue<pair<K, T>> queue;
     pthread_mutex_t mutex;
     pthread_cond_t cond;
 
   public:
-    Stream() {
+    FifoStream() {
       mutex = PTHREAD_MUTEX_INITIALIZER;
       cond = PTHREAD_COND_INITIALIZER;
     }
 
-    virtual void produce(K key, T data) {
+    void produce(K key, T data) override {
       // Zaklenemo mutex in dodamo [product] v vrsto
       pthread_mutex_lock(&mutex);
 
@@ -36,7 +60,7 @@ class Stream {
       pthread_mutex_unlock(&mutex);
     }
 
-    virtual pair<K, T> consume(K key) {
+    pair<K, T> consume() override {
       // Zaklenemo mutex in počakamo, dokler queue ni prazen
       pthread_mutex_lock(&mutex);
       while (queue.empty()) {
@@ -49,10 +73,18 @@ class Stream {
       pthread_mutex_unlock(&mutex);
       return keydata;
     }
+
+    // TODO search in queue?
+    pair<K, T> consume(K key) override {
+      return consume();
+    }
 };
 
+// Implementacija Streama, ki uporablja map, kar omogoca
+// enostavno porabljanje nalog po kljucu.
+//
 template <typename K, typename T> 
-class OrderedStream : public Stream<K, T> {
+class KeyedStream : public Stream<K, T> {
 
   private:
     std::unordered_map<K, T> map;
@@ -60,7 +92,7 @@ class OrderedStream : public Stream<K, T> {
     pthread_cond_t cond;
 
   public:
-    OrderedStream() {
+    KeyedStream() {
       mutex = PTHREAD_MUTEX_INITIALIZER;
       cond = PTHREAD_COND_INITIALIZER;
     }
@@ -75,6 +107,11 @@ class OrderedStream : public Stream<K, T> {
       pthread_cond_signal(&cond);
 
       pthread_mutex_unlock(&mutex);
+    }
+
+    pair<K, T> consume() override {
+      // TODO return any?
+      throw invalid_argument("You must specify a key to consume for ordered streams!");
     }
 
     pair<K, T> consume(K key) override {
@@ -94,26 +131,56 @@ class OrderedStream : public Stream<K, T> {
     }
 };
 
-
-template <typename T, typename U> 
-class ProduceConsumeStream {
+// Abstrakcija za stopnjo v cevovodu z uporabo dveh Stream.
+// Prvi Stream se uporablja za consume operacijo; podatki po prvem
+// Stream torej prihajajo v stopnjo cevovoda. Po drugem Stream
+// obdelani/predelani podatki odhajajo (preko produce).
+//
+template <typename K, typename T, typename U> 
+class PipelineStage {
 
   private:
-    Stream<T> *consumer;
-    Stream<U> *producer;
+    Stream<K, T> *consumer;
+    Stream<K, U> *producer;
 
   public:
-    ProduceConsumeStream(Stream<T> *consumer, Stream<U> *producer) {
+    PipelineStage(Stream<K, T> *consumer, Stream<K, U> *producer) {
       this->consumer = consumer;
       this->producer = producer;
     }
 
-    T consume() {
+    pair<K, T> consume() {
       return consumer->consume();
     }
 
-    void produce(U data) {
-      return producer->produce(data);
+    pair<K, T> consume(K key) {
+      return consumer->consume(key);
+    }
+
+    void produce(K key, U data) {
+      return producer->produce(key, data);
+    }
+};
+
+// Specializacija za stopjo cevovoda, ki ima samo consumer del
+//
+template <typename K, typename T> 
+class PipelineStage<K, T, void> {
+
+  private:
+    Stream<K, T> *consumer;
+
+  public:
+    PipelineStage(Stream<K, T> *consumer) {
+      this->consumer = consumer;
+    }
+
+    pair<K, T> consume() {
+      return consumer->consume();
+    }
+
+    pair<K, T> consume(K key) {
+      return consumer->consume(key);
     }
 };
 
