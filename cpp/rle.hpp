@@ -19,30 +19,29 @@
 
 class RLE {
  public:
-  static Vec<int_bool> encode(Vec<bool> &data) {
-    Vec<int_bool> encoded_data(data.size(), std::vector<int_bool>());
+  static Vec<int_bool> *encode(Vec<bool> *data) {
+    Vec<int_bool> *encoded_data =
+        new Vec<int_bool>(data->size(), std::vector<int_bool>());
 
-    for (int line = 0; line < data.size(); ++line) {
-      if (data[line].back() == Type::Black)
-        data[line].push_back(Type::White);
+    for (int line = 0; line < data->size(); ++line) {
+      if ((*data)[line].back() == Type::Black)
+        (*data)[line].push_back(Type::White);
       else
-        data[line].push_back(Type::Black);
+        (*data)[line].push_back(Type::Black);
 
       int cnt = 0;
-      for (int i = 0; i < data[line].size() - 1; ++i) {
-        if (data[line][i] == data[line][i + 1]) {
+      for (int i = 0; i < (*data)[line].size() - 1; ++i) {
+        if ((*data)[line][i] == (*data)[line][i + 1]) {
           cnt++;
         } else {
-          encoded_data[line].push_back({cnt + 1, data[line][i]});
+          (*encoded_data)[line].push_back({cnt + 1, (*data)[line][i]});
           cnt = 0;
         }
       }
-      data[line].pop_back();
+      (*data)[line].pop_back();
     }
     return encoded_data;
   }
-
-  
 };
 
 #endif
