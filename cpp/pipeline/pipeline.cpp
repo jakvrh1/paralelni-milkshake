@@ -78,22 +78,6 @@ void* write(void* arg) {
   return nullptr;
 }
 
-// Funkcija za niti, ki pisejo v vrstnem redu.
-void* write_ordered(void* arg) {
-  PipelineStage<int, Vec<string>, void>* stage = (PipelineStage<int, Vec<string>, void>*) arg;
-
-  for (int i = 0; i < REPS; i++) {
-    auto p = stage->consume(i); 
-    auto key = p.first;
-    auto huffman_data = p.second;
-
-    Output::write("test.txt", huffman_data);
-  }
-
-  // S tem se bo program zaključil (glavna nit čaka na join)
-  return nullptr;
-}
-
 // Glavna nit
 int main(int argc, char const *argv[]) {
 
