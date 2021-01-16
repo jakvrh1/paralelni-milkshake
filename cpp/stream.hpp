@@ -61,7 +61,7 @@ class FifoStream : public Stream<K, T> {
     }
 
     pair<K, T> consume() override {
-      // Zaklenemo mutex in počakamo, dokler queue ni prazen
+      // Zaklenemo mutex in čakamo, dokler je queue prazen
       pthread_mutex_lock(&mutex);
       while (queue.empty()) {
         pthread_cond_wait(&cond, &mutex);
@@ -84,7 +84,7 @@ class FifoStream : public Stream<K, T> {
 // enostavno porabljanje nalog po kljucu.
 //
 template <typename K, typename T> 
-class KeyedStream : public Stream<K, T> {
+class IndexedStream : public Stream<K, T> {
 
   private:
     std::unordered_map<K, T> map;
@@ -92,7 +92,7 @@ class KeyedStream : public Stream<K, T> {
     pthread_cond_t cond;
 
   public:
-    KeyedStream() {
+    IndexedStream() {
       mutex = PTHREAD_MUTEX_INITIALIZER;
       cond = PTHREAD_COND_INITIALIZER;
     }
@@ -110,12 +110,23 @@ class KeyedStream : public Stream<K, T> {
     }
 
     pair<K, T> consume() override {
-      // TODO return any?
-      throw invalid_argument("You must specify a key to consume for ordered streams!");
+      // Zaklenemo mutex in čakamo, dokler ni kaksnega elementa
+      pthread_mutex_lock(&mutex);
+
+      auto it = map.begin();
+      while ((it = map.begin()) == map.end()) {
+        pthread_cond_wait(&cond, &mutex);
+      }
+
+      pair<K, T> keydata(it->first, it->second);
+      map.erase(it);
+
+      pthread_mutex_unlock(&mutex);
+      return keydata;
     }
 
     pair<K, T> consume(K key) override {
-      // Zaklenemo mutex in počakamo, dokler ni elementa s tem kljucem
+      // Zaklenemo mutex in čakamo, dokler ni elementa s tem kljucem
       pthread_mutex_lock(&mutex);
 
       auto it = map.find(key);

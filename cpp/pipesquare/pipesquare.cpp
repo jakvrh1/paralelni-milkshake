@@ -140,29 +140,32 @@ void* write_ordered(void* arg) {
 int main(int argc, char const *argv[]) {
   mutex_write = PTHREAD_MUTEX_INITIALIZER;
 
-  FifoStream<int, string> input_stream;
-  FifoStream<int, Vec<bool>*> bit_stream;
-  FifoStream<int, Vec<int_bool>> encoded_stream;
-
-  // uporabimo "boljsi" output stream glede na zahteve
+  Stream<int, string>* input_stream;
+  Stream<int, Vec<bool>*>* bit_stream;
+  Stream<int, Vec<int_bool>>* encoded_stream;
   Stream<int, Vec<string>>* output_stream;
-  if (ORDERED) output_stream = new KeyedStream<int, Vec<string>>();
+
+  input_stream = new FifoStream<int, string>();
+  bit_stream = new FifoStream<int, Vec<bool>*>();
+  encoded_stream = new FifoStream<int, Vec<int_bool>>();
+  // uporabimo "boljsi" output stream glede na zahteve
+  if (ORDERED) output_stream = new IndexedStream<int, Vec<string>>();
   else output_stream = new FifoStream<int, Vec<string>>();
 
   // Prva stopnja cevovoda, image reading
-  PipelineStage<int, string, Vec<bool>*> read_stage(&input_stream, &bit_stream);
+  PipelineStage<int, string, Vec<bool>*> read_stage(input_stream, bit_stream);
   pthread_t read_threads[READ_THREADS];
   for (int i = 0; i < READ_THREADS; i++)
     pthread_create(&read_threads[i], NULL, read, &read_stage);
 
   // Druga stopnja cevovoda, run length encoding
-  PipelineStage<int, Vec<bool>*, Vec<int_bool>> rle_stage(&bit_stream, &encoded_stream);
+  PipelineStage<int, Vec<bool>*, Vec<int_bool>> rle_stage(bit_stream, encoded_stream);
   pthread_t rle_threads[RLE_THREADS];
   for (int i = 0; i < RLE_THREADS; i++)
     pthread_create(&rle_threads[i], NULL, rle, &rle_stage);
 
   // Tretja stopnja cevovoda, huffman encoding
-  PipelineStage<int, Vec<int_bool>, Vec<string>> huffman_stage(&encoded_stream, output_stream);
+  PipelineStage<int, Vec<int_bool>, Vec<string>> huffman_stage(encoded_stream, output_stream);
   pthread_t huffman_threads[HUFFMAN_THREADS];
   for (int i = 0; i < HUFFMAN_THREADS; i++)
     pthread_create(&huffman_threads[i], NULL, huffman, &huffman_stage);
@@ -176,7 +179,7 @@ int main(int argc, char const *argv[]) {
 
   // V cevovod posljemo delo
   for (int i = 0; i < REPS; i++) 
-    input_stream.produce(i, "../../assets/1.png");
+    input_stream->produce(i, "../../assets/1.png");
 
   // Pocakamo, da se pisanje zakljuci
   for (int i = 0; i < WRITE_THREADS; i++)
