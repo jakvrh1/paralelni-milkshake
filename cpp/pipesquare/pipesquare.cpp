@@ -21,8 +21,6 @@
 #define HUFFMAN_THREADS 2
 #define WRITE_THREADS 2
 
-#define ORDERED 0
-
 using namespace std;
 
 // ker vec niti pise, moramo uporabiti mutex,
@@ -102,38 +100,6 @@ void* write(void* arg) {
   return nullptr;
 }
 
-// Funkcija za niti, ki pisejo v vrstnem redu
-void* write_ordered(void* arg) {
-  PipelineStage<int, Vec<string>, void>* stage = (PipelineStage<int, Vec<string>, void>*) arg;
-
-  int curr;
-  while (true) {
-
-    pthread_mutex_lock(&mutex_write);
-    if (writes < REPS) {
-      curr = writes;
-      writes++;
-    } else {
-      pthread_mutex_unlock(&mutex_write);
-      break;
-    }
-
-    // Pocakamo na naslednji dokument po vrsti!
-    auto p = stage->consume(curr);
-    auto key = p.first;
-    auto huffman_data = p.second;
-
-    // Odklenemo sele, ko smo zares prevzeli podatke
-    pthread_mutex_unlock(&mutex_write);
-
-    // cout << "Writing " << key << endl;
-    Output::write("test.txt", huffman_data);
-  }
-
-  // S tem se bo program zaključil (glavna nit čaka na join)
-  return nullptr;
-}
-
 /*
  * Glavna nit
  */
@@ -148,9 +114,7 @@ int main(int argc, char const *argv[]) {
   input_stream = new FifoStream<int, string>();
   bit_stream = new FifoStream<int, Vec<bool>*>();
   encoded_stream = new FifoStream<int, Vec<int_bool>>();
-  // uporabimo "boljsi" output stream glede na zahteve
-  if (ORDERED) output_stream = new IndexedStream<int, Vec<string>>();
-  else output_stream = new FifoStream<int, Vec<string>>();
+  output_stream = new FifoStream<int, Vec<string>>();
 
   // Prva stopnja cevovoda, image reading
   PipelineStage<int, string, Vec<bool>*> read_stage(input_stream, bit_stream);
@@ -174,8 +138,7 @@ int main(int argc, char const *argv[]) {
   PipelineStage<int, Vec<string>, void> write_stage(output_stream);
   pthread_t write_threads[WRITE_THREADS];
   for (int i = 0; i < WRITE_THREADS; i++)
-    if (ORDERED) pthread_create(&write_threads[i], NULL, write_ordered, &write_stage);
-    else pthread_create(&write_threads[i], NULL, write, &write_stage);
+    pthread_create(&write_threads[i], NULL, write, &write_stage);
 
   // V cevovod posljemo delo
   for (int i = 0; i < REPS; i++) 
@@ -184,6 +147,11 @@ int main(int argc, char const *argv[]) {
   // Pocakamo, da se pisanje zakljuci
   for (int i = 0; i < WRITE_THREADS; i++)
     pthread_join(write_threads[i], NULL);
+
+  free(input_stream);
+  free(bit_stream);
+  free(encoded_stream);
+  free(output_stream);
 
   return 0;
 }
