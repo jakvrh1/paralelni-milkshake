@@ -54,6 +54,8 @@ class Input {
         }
       }
 
+      stbi_image_free(image);
+
       return bits;
     }
 };

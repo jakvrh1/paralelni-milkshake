@@ -15,18 +15,29 @@ class Output {
 
   public:
 
-    /**
-     * Zapiše vsebino [data] po vrsticah.
-     */
-    static void write(const std::string &filename, const Vec<std::string> &data) {
+    // Zapiše drevesi in  vsebino [data] po vrsticah.
+    static void write(
+      const std::string &filename, 
+      const std::pair<std::vector<int>*, std::vector<int>*> header, 
+      const Vec<std::string> *data
+    ) {
       std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
 
       if (!file.good()) {
         throw std::invalid_argument("Cannot open file");
       }
 
+      // Izpisemo huffmanovo drevo
+      file << header.first->size() << " ";
+      for (int &j : *header.first) file << j << " ";
+      file << "\n";
+
+      file << header.second->size() << " ";
+      for (int &j : *header.second) file << j << " ";
+      file << "\n";
+
       // Izpišemo vsako vrstico
-      for (auto &line : data) {
+      for (auto &line : *data) {
         // Znotraj vrstice izpišemo besede s presledki
         for (auto &text : line) {
           file << text << " ";
