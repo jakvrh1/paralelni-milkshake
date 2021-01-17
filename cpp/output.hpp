@@ -28,13 +28,13 @@ class Output {
       }
 
       // Izpisemo huffmanovo drevo
-      cout << header.first->size() << " ";
-      for (int &j : *header.first) cout << j << " ";
-      cout << "\n";
+      file << header.first->size() << " ";
+      for (int &j : *header.first) file << j << " ";
+      file << "\n";
 
-      cout << header.second->size() << " ";
-      for (int &j : *header.second) cout << j << " ";
-      cout << "\n";
+      file << header.second->size() << " ";
+      for (int &j : *header.second) file << j << " ";
+      file << "\n";
 
       // Izpišemo vsako vrstico
       for (auto &line : *data) {
