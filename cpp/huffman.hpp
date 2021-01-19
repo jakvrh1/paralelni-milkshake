@@ -194,6 +194,8 @@ class Huffman {
     Vec<unsigned char> *decoded_data =
         new Vec<unsigned char>(encoded_data->size(), std::vector<unsigned char>());
 
+    auto &enc = *encoded_data;
+
     for (int i = 0; i < encoded_data->size(); ++i) {
       for (int j = 0; j < enc[i].size() - 1; ++j) {
         auto &enc_ij = (*encoded_data)[i][j];
