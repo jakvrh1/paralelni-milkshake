@@ -1,3 +1,9 @@
+# Custom: txt files, perf data
+*.txt
+*.data
+*.old
+assets/out/*
+
 # Prerequisites
 *.d
 
@@ -53,3 +59,4 @@ dkms.conf
 
 # Code editor
 .vscode/c_cpp_properties.json
+.vscode/settings.json
