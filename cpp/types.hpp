@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <queue>
+#include <string>
+#include <iostream>
 
 template <typename T> 
 using Vec = std::vector<std::vector<T>>;

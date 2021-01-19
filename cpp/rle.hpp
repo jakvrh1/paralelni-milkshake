@@ -15,32 +15,74 @@
 #include <unordered_map>
 #include <vector>
 
+#include "input.hpp"
 #include "types.hpp"
 
 class RLE {
  public:
   static Vec<int_bool> *encode(Vec<bool> *data) {
-    Vec<int_bool> *encoded_data =
-        new Vec<int_bool>(data->size(), std::vector<int_bool>());
+    Vec<int_bool> *encoded_data = new Vec<int_bool>();
+    encoded_data->assign(data->size(), std::vector<int_bool>());
+
+    auto &enc = *encoded_data;
 
     for (int line = 0; line < data->size(); ++line) {
-      if ((*data)[line].back() == Type::Black)
-        (*data)[line].push_back(Type::White);
+      auto &dl = (*data)[line];
+
+      if (dl.back() == Type::Black)
+        dl.push_back(Type::White);
       else
-        (*data)[line].push_back(Type::Black);
+        dl.push_back(Type::Black);
 
       int cnt = 0;
-      for (int i = 0; i < (*data)[line].size() - 1; ++i) {
-        if ((*data)[line][i] == (*data)[line][i + 1]) {
+      for (int i = 0; i < dl.size() - 1; ++i) {
+        if (dl[i] == dl[i + 1]) {
           cnt++;
         } else {
-          (*encoded_data)[line].push_back({cnt + 1, (*data)[line][i]});
+          enc[line].push_back({cnt + 1, dl[i]});
           cnt = 0;
         }
       }
-      (*data)[line].pop_back();
+      dl.pop_back();
     }
-    return encoded_data;
+
+    return &enc;
+  }
+
+  static Vec<int_bool> *encode(unsigned char *data) {
+    Vec<int_bool> *encoded_data = new Vec<int_bool>();
+    encoded_data->assign(A4_LINES, std::vector<int_bool>());
+
+    auto &enc = *encoded_data;
+    int WHITE = 255;
+
+    for (int line = 0; line < A4_LINES; ++line) {
+      int cnt = 0;
+
+      for (int pixel = 0; pixel < A4_LINE_LENGTH - 1; ++pixel) {
+        int idx = line * A4_LINES + pixel;
+
+        if (data[idx] == data[idx + 1]) {
+          cnt++;
+        } else {
+          if (data[idx] == WHITE)
+            enc[line].push_back({cnt + 1, Type::White});
+          else
+            enc[line].push_back({cnt + 1, Type::Black});
+
+          cnt = 0;
+        }
+      }
+
+      int idxl = line * A4_LINES + A4_LINE_LENGTH - 1;
+      if (data[idxl] == WHITE)
+        enc[line].push_back({cnt + 1, Type::White});
+      else
+        enc[line].push_back({cnt + 1, Type::Black});
+    }
+
+    free(data);
+    return &enc;
   }
 };
 

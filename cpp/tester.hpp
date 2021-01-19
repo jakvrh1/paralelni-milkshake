@@ -59,7 +59,6 @@ void test1(int SIZE, bool izpis) {
   }
 
   delete enc;
-  delete a;
   hf->finalize();
 }
 
@@ -128,7 +127,6 @@ void test2(int SIZE, bool izpis) {
   std::cout << std::flush;
 
   delete enc;
-  delete a;
   delete dec;
   hf2->finalize();
   hf1->finalize();

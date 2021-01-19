@@ -23,7 +23,7 @@ class Input {
     /**
      * Prebere sliko v datoteki z imenom [filename]. Sliko vrne kot 2D vektor bool.
      */
-    static Vec<bool>* read(const char* filename) {
+    static unsigned char* read(const char* filename) {
       // Sliko preberemo že kot sivo (število komponent = 1)
       int width, height;
       unsigned char* image = stbi_load(filename, &width, &height, NULL, 1);
@@ -38,6 +38,9 @@ class Input {
         throw std::invalid_argument("Image is not of correct size");
       }
 
+      return image;
+
+      /*
       Vec<bool>* bits = new Vec<bool>();
       bits->assign(A4_LINES, std::vector<bool>(A4_LINE_LENGTH, false));
 
@@ -57,6 +60,7 @@ class Input {
       stbi_image_free(image);
 
       return bits;
+      */
     }
 };
 
