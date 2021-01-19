@@ -14,22 +14,29 @@
 
 class Huffman {
  private:
-   // SPREMENLJIVKE
   static const std::string EOL;
 
+  // kodirnik {št. bitov} -> {binarno zakodiran string}
   std::unordered_map<int, std::string> encode_white;
   std::unordered_map<int, std::string> encode_black;
 
+  // dekodirnik {binarno zakodiran string} -> {št. bitov}
   std::unordered_map<std::string, int> decode_white;
   std::unordered_map<std::string, int> decode_black;
 
+  // drevesa zgrajena iz header-ja
   Node *white_tree;
   Node *black_tree;
 
-  // bulding encoding table and freeing nodes
-  std::string code = "";
+  // zapis header-ja, kjer {0 = leaf, 1 = not leaf}
+  // za 0 imamo vedno tudi vrednost noda (dolžina zaporednih bitov).
   std::vector<int> *write_white_tree = nullptr;
   std::vector<int> *write_black_tree = nullptr;
+
+  // služi, kot tretji parameter funkcije encodeTree(Node*, const Type&)
+  std::string code = "";
+
+  // grajenje kodirnika in zapis drevesa
   void encodeTree(Node *node, const Type &type) {
     auto &wwt = *write_white_tree;
     auto &wbt = *write_black_tree;
@@ -69,6 +76,7 @@ class Huffman {
     node->erase();
   }
 
+  // gradnja dekodirnika
   void decodeTree(Node *node, const Type &type) {
     if (node->isLeaf()) {
       if (type == Type::White)
@@ -95,18 +103,7 @@ class Huffman {
     node->erase();
   }
 
-  int temp = 0;
-  void preorderTraverse(Node *node) {
-    std::cout << node->value << " ";
-    std::cout << "- ";
-    if (node->isLeaf()) {
-      std::cout << " x ";
-      return;
-    }
-    if (node->left != nullptr) preorderTraverse(node->left);
-    if (node->right != nullptr) preorderTraverse(node->right);
-  }
-
+  // zgradi drevesa iz header-ja
   void buildTrees(std::pair<std::vector<int> *, std::vector<int> *> &wb_tree) {
     this->next = -1;
     this->white_tree = this->readTree(Type::White, wb_tree.first);
@@ -114,7 +111,11 @@ class Huffman {
     this->black_tree = this->readTree(Type::Black, wb_tree.second);
   }
 
+  // služi, kot tretja spremenljivka funkcije
+  // readTree(const Type&, std::vector<int>*)
   int next = -1;
+  // gradnja drevesa kjer {0 = leaf, 1 = not leaf}
+  // za 0 imamo vedno tudi vrednost noda (dolžina zaporednih bitov).
   Node *readTree(const Type &type, std::vector<int> *tree) {
     ++next;
     if ((*tree)[next] == 0) {
@@ -129,6 +130,7 @@ class Huffman {
     return root;
   }
 
+  // gradnja drevesa iz podatkov pridobljenih iz prepareData()
   Node *huffmanTree(std::multimap<int, Node *> &processed_rle_data) {
     while (processed_rle_data.size() > 1) {
       auto p1 = processed_rle_data.begin();
@@ -156,7 +158,7 @@ class Huffman {
     Huffman *hf = new Huffman();
     hf->rle_data = rle_data;
 
-    auto huffman_tree_root_node = Huffman::preparData(*hf->rle_data);
+    auto huffman_tree_root_node = Huffman::prepareData(*hf->rle_data);
     auto wt = hf->huffmanTree(huffman_tree_root_node.first);
     auto bt = hf->huffmanTree(huffman_tree_root_node.second);
 
@@ -199,12 +201,10 @@ class Huffman {
         auto &enc_ij = (*encoded_data)[i][j];
         auto &dd = (*decoded_data)[i];
 
-        // we start with white
+        // vsaka vrstica se začne z belimi biti
         if (j % 2 == 0) {
-          if (decode_white[enc_ij] == 0) continue;
           for (int k = 0; k < decode_white[enc_ij]; ++k) dd.push_back('0');
         } else {
-          if (decode_black[enc_ij] == 0) continue;
           for (int k = 0; k < decode_black[enc_ij]; ++k) dd.push_back('1');
         }
       }
@@ -234,8 +234,11 @@ class Huffman {
     delete this;
   }
 
+  // funkcija pripravi pair slovarjev nodov
+  // { {št. pojavitev, {dolžina, Type::White} }, {št. pojavitev, {dolžina,
+  // Type::Black} } }
   static std::pair<std::multimap<int, Node *>, std::multimap<int, Node *>>
-  preparData(Vec<int_bool> &data) {
+  prepareData(Vec<int_bool> &data) {
     std::map<int, int> w;
     std::map<int, int> b;
 
@@ -263,11 +266,11 @@ class Huffman {
     return {new_data_white, new_data_black};
   }
 
-
   std::pair<std::vector<int> *, std::vector<int> *> header() {
     return {write_white_tree, write_black_tree};
   }
 
+  // vrne zakodirane podatke
   Vec<std::string> *encode() {
     Vec<std::string> *encoded_data = new Vec<std::string>();
     encoded_data->assign(rle_data->size(), std::vector<std::string>());
