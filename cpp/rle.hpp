@@ -15,7 +15,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "input.hpp"
 #include "types.hpp"
 
 class RLE {
@@ -50,6 +49,8 @@ class RLE {
   }
 
   static Vec<int_bool> *encode(unsigned char *data) {
+    int A4_LINES = 1145;
+    int A4_LINE_LENGTH = 1728;
     Vec<int_bool> *encoded_data = new Vec<int_bool>();
     encoded_data->assign(A4_LINES, std::vector<int_bool>());
 
@@ -60,7 +61,7 @@ class RLE {
       int cnt = 0;
 
       for (int pixel = 0; pixel < A4_LINE_LENGTH - 1; ++pixel) {
-        int idx = line * A4_LINES + pixel;
+        int idx = line * A4_LINE_LENGTH + pixel;
 
         if (data[idx] == data[idx + 1]) {
           cnt++;
@@ -74,7 +75,7 @@ class RLE {
         }
       }
 
-      int idxl = line * A4_LINES + A4_LINE_LENGTH - 1;
+      int idxl = line * A4_LINE_LENGTH + A4_LINE_LENGTH - 1;
       if (data[idxl] == WHITE)
         enc[line].push_back({cnt + 1, Type::White});
       else
