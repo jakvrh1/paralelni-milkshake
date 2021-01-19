@@ -36,7 +36,7 @@ int writes = 0;
 
 // Funkcija za niti, ki berejo.
 void* read(void* arg) {
-  PipelineStage<int, string, Vec<bool>*>* stage = (PipelineStage<int, string, Vec<bool>*>*) arg;
+  PipelineStage<int, string, unsigned char*>* stage = (PipelineStage<int, string, unsigned char*>*) arg;
 
   while (true) {
     auto p = stage->consume(); 
@@ -52,7 +52,7 @@ void* read(void* arg) {
 
 // Funkcija za niti, ki prebrane podatke kodirajo z RLE. 
 void* rle(void* arg) {
-  PipelineStage<int, Vec<bool>*, Vec<int_bool>*>* stage = (PipelineStage<int, Vec<bool>*, Vec<int_bool>*>*) arg;
+  PipelineStage<int, unsigned char*, Vec<int_bool>*>* stage = (PipelineStage<int, unsigned char*, Vec<int_bool>*>*) arg;
 
   while (true) {
     auto p = stage->consume(); 
@@ -60,8 +60,6 @@ void* rle(void* arg) {
     auto image_data = p.second;
 
     auto rle_data = RLE::encode(image_data);
-    delete image_data;
-
     stage->produce(key, rle_data);
   }
 }
@@ -77,7 +75,6 @@ void* huffman(void* arg) {
 
     Huffman *hf = Huffman::initialize(rle_data);
     auto encoded = hf->encode();
-    delete rle_data;
 
     huffman_data data;
     data.hf = hf;
@@ -123,18 +120,18 @@ int main(int argc, char const *argv[]) {
   mutex_write = PTHREAD_MUTEX_INITIALIZER;
 
   FifoStream<int, string> input_stream;
-  FifoStream<int, Vec<bool>*> bit_stream;
+  FifoStream<int, unsigned char*> bit_stream;
   FifoStream<int, Vec<int_bool>*> encoded_stream;
   FifoStream<int, huffman_data> output_stream;
 
   // Prva stopnja cevovoda, image reading
-  PipelineStage<int, string, Vec<bool>*> read_stage(&input_stream, &bit_stream);
+  PipelineStage<int, string, unsigned char*> read_stage(&input_stream, &bit_stream);  
   pthread_t read_threads[READ_THREADS];
   for (int i = 0; i < READ_THREADS; i++)
     pthread_create(&read_threads[i], NULL, read, &read_stage);
 
   // Druga stopnja cevovoda, run length encoding
-  PipelineStage<int, Vec<bool>*, Vec<int_bool>*> rle_stage(&bit_stream, &encoded_stream);
+  PipelineStage<int, unsigned char*, Vec<int_bool>*> rle_stage(&bit_stream, &encoded_stream);
   pthread_t rle_threads[RLE_THREADS];
   for (int i = 0; i < RLE_THREADS; i++)
     pthread_create(&rle_threads[i], NULL, rle, &rle_stage);
