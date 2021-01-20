@@ -11,16 +11,16 @@
 #include "../rle.hpp"
 #include "../tester.hpp"
 
-#define REPS 1
+#define REPS 10
 
 using namespace std;
 
 int main(int argc, char const *argv[]) {
 
-  for (int i = 1; i <= 10; i++) {
+  for (int i = 1; i <= REPS; i++) {
     struct image im;
     try {
-      im = Input::read_image("../../assets/" + to_string(i) + ".png");
+      im = Input::read_image("../../assets/6.png");
     } catch(const std::exception& e) {
       std::cerr << "Image " << i << ": " << e.what() << '\n';
       // Iz te moke ne bo testa
@@ -36,18 +36,6 @@ int main(int argc, char const *argv[]) {
     Output::write_encoded("test.txt", hd, enc);
     delete enc;
     hf->finalize();
-
-    Huffman *hf_recreated = Input::read_encoded("test.txt");
-    auto decoded = hf_recreated->decode();
-
-    try {
-      Output::write_image("../../out/" + to_string(i) + ".png", decoded);
-    } catch(const std::exception& e) {
-      std::cerr << "Encoded " << i << ": " << e.what() << '\n';
-    }
-
-    hf_recreated->finalize();
-    delete decoded;
   }
 
 /*   // TEST SAMPLE

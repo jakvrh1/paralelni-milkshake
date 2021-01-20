@@ -128,10 +128,10 @@ void* write(void* arg) {
 int main(int argc, char const *argv[]) {
   mutex_write = PTHREAD_MUTEX_INITIALIZER;
 
-  FifoStream<int, string> input_stream(2);
-  FifoStream<int, struct image> image_stream(2);
-  FifoStream<int, Vec<int_bool>*> encoded_stream(2);
-  FifoStream<int, huffman_data> output_stream(2);
+  FifoStream<int, string> input_stream(0);
+  FifoStream<int, struct image> image_stream(0);
+  FifoStream<int, Vec<int_bool>*> encoded_stream(0);
+  FifoStream<int, huffman_data> output_stream(0);
 
   // Prva stopnja cevovoda, image reading
   PipelineStage<int, string, struct image> read_stage(&input_stream, &image_stream);  
@@ -159,7 +159,7 @@ int main(int argc, char const *argv[]) {
 
   // V cevovod posljemo delo
   for (int i = 0; i < REPS; i++) 
-    input_stream.produce(i, "../../assets/1.png");
+    input_stream.produce(i, "../../assets/6.png");
 
   // Pocakamo, da se pisanje zakljuci
   for (int i = 0; i < WRITE_THREADS; i++)

@@ -13,7 +13,7 @@
 #include "../output.hpp"
 #include "../stream.hpp"
 
-#define REPS 100
+#define REPS 10
 
 struct huffman_data {
   Huffman *hf;
@@ -103,10 +103,10 @@ void* write(void* arg) {
 // Glavna nit
 int main(int argc, char const *argv[]) {
 
-  FifoStream<int, string> input_stream(1);
-  FifoStream<int, struct image> image_stream(1);
-  FifoStream<int, Vec<int_bool>*> encoded_stream(1);
-  FifoStream<int, huffman_data> output_stream(1);
+  FifoStream<int, string> input_stream(0);
+  FifoStream<int, struct image> image_stream(0);
+  FifoStream<int, Vec<int_bool>*> encoded_stream(0);
+  FifoStream<int, huffman_data> output_stream(0);
 
   // Prva stopnja cevovoda, image reading
   PipelineStage<int, string, struct image> read_stage(&input_stream, &image_stream);  
@@ -132,7 +132,7 @@ int main(int argc, char const *argv[]) {
 
   // V cevovod posljemo delo
   for (int i = 0; i < REPS; i++) 
-    input_stream.produce(i, "../../assets/1.png");
+    input_stream.produce(i, "../../assets/6.png");
 
   pthread_join(write_thread, NULL);
   return 0;
