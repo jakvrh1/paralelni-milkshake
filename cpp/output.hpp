@@ -13,6 +13,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "libs/stb_image_write.h"
 #include "types.hpp"
+#include "bit_manipulation.hpp"
 
 #define A4_LINES 1145
 #define A4_LINE_LENGTH 1728
@@ -20,39 +21,66 @@
 class Output {
 
   public:
-
     // Zapiše drevesi in  vsebino [data] po vrsticah.
     static void write_encoded(
       const std::string &filename, 
       const std::pair<std::vector<int>*, std::vector<int>*> header, 
       const Vec<std::string> *data
     ) {
-      std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
+      std::ofstream file(filename, std::fstream::out | std::fstream::trunc | std::fstream::binary);
 
       if (!file.good()) {
         throw std::invalid_argument("Cannot open file");
       }
 
       // Izpisemo huffmanovo drevo
-      file << header.first->size() << " ";
-      for (int &j : *header.first) file << j << " ";
-      file << "\n";
+      Bit::write_bytes(file, header.first->size(), Bit::B3);
+      for(int i = 0; i < header.first->size(); ++i) {
+        auto &hi = (*header.first)[i];
+        // enke
+        if(i % 2 == 0) {
+          Bit::write_bytes(file, hi, Bit::B1);
+        } else {
+          Bit::write_bytes(file, hi, Bit::B2);
+        }
+      }
 
-      file << header.second->size() << " ";
-      for (int &j : *header.second) file << j << " ";
-      file << "\n";
+      Bit::write_bytes(file, header.second->size(), Bit::B3);
+      for(int i = 0; i < header.second->size(); ++i) {
+        auto &hi = (*header.second)[i];
+        // enke
+        if(i % 2 == 0) {
+          Bit::write_bytes(file, hi, Bit::B1);
+        } else {
+          Bit::write_bytes(file, hi, Bit::B2);
+        }
+      }
 
-      file << (*data).size() << "\n";
+      Bit::write_bytes(file, (*data).size(), Bit::B3);
+
+      int cnt = 7;
+      unsigned char b = 0;
       // Izpišemo vsako vrstico
       for (auto &line : *data) {
         // Znotraj vrstice izpišemo besede s presledki
-        file << line.size() << " ";
+        Bit::write_bytes(file, line.size(), Bit::B3);
         for (auto &text : line) {
-          file << text << " ";
+          for(auto &c: text) {
+            if(cnt == -1) {
+              file << b;
+              cnt = 7;
+            }
+            if(c == '1') {
+              Bit::set_bit(b, cnt--, true);
+            } else {
+              Bit::set_bit(b, cnt--, false);
+            }
+          }
         }
-        file << "\n";
       }
-      file << std::flush;
+      if(cnt != 7) {
+        file << b;
+      }
 
       if (!file.good()) {
         throw std::invalid_argument("Writing to file failed");

@@ -36,6 +36,7 @@ class Huffman {
   // služi, kot tretji parameter funkcije encodeTree(Node*, const Type&)
   std::string code = "";
 
+  int cnt = 0;
   // grajenje kodirnika in zapis drevesa
   void encodeTree(Node *node, const Type &type) {
     auto &wwt = *write_white_tree;
@@ -43,11 +44,15 @@ class Huffman {
 
     if (node->isLeaf()) {
       if (type == Type::White) {
-        wwt.push_back(0);
+        wwt.push_back(cnt);
+        //wwt.push_back(0);
+        cnt = 0;
         wwt.push_back(node->value);
         encode_white.insert({node->value, code});
       } else {
-        wbt.push_back(0);
+        wbt.push_back(cnt);
+        //wbt.push_back(0);
+        cnt = 0;
         wbt.push_back(node->value);
         encode_black.insert({node->value, code});
       }
@@ -55,11 +60,7 @@ class Huffman {
       node->erase();
       return;
     }
-
-    if (type == Type::White)
-      wwt.push_back(1);
-    else
-      wbt.push_back(1);
+    cnt++;
 
     if (node->left != nullptr) {
       code.push_back('1');

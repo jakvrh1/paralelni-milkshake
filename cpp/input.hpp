@@ -16,6 +16,7 @@
 
 #include "types.hpp"
 #include "huffman.hpp"
+#include "bit_manipulation.hpp"
 
 #define A4_LINES 1145
 #define A4_LINE_LENGTH 1728
@@ -45,7 +46,7 @@ class Input {
     }
 
     static Huffman *read_encoded(const std::string &filename) {
-      std::ifstream file(filename);
+      std::ifstream file(filename, std::fstream::in | std::fstream::binary);
 
       if (!file.good()) {
         throw std::invalid_argument("Cannot open file");
@@ -55,31 +56,54 @@ class Input {
       int count;
 
       // Belo drevo
-      file >> count;
-      std::vector<int>* tree_white = new std::vector<int>(count);
+      count = Bit::read_bytes(file, Bit::B3);
+
+      std::vector<int>* tree_white = new std::vector<int>();
+      tree_white->reserve(count * 3);
+
       for (int i = 0; i < count; i++) {
-        file >> value;
-        (*tree_white)[i] = value;
+        auto &tw = (*tree_white);
+        // enke 
+        if(i % 2 == 0) {
+          int k = Bit::read_bytes(file, Bit::B1);
+          while(k--) {
+            tw.push_back(1);
+          }
+        } else {
+          tw.push_back(0);
+          tw.push_back(Bit::read_bytes(file, Bit::B2));
+        }
       }
 
       // Crno drevo
-      file >> count;
-      std::vector<int>* tree_black = new std::vector<int>(count);
+      count = Bit::read_bytes(file, Bit::B3);
+      std::vector<int>* tree_black = new std::vector<int>();
+      tree_black->reserve(count * 3);
       for (int i = 0; i < count; i++) {
-        file >> value;
-        (*tree_black)[i] = value;
+        auto &tb = (*tree_black);
+        // enke 
+        if(i % 2 == 0) {
+          int k = Bit::read_bytes(file, Bit::B1);
+          while(k--) {
+            tb.push_back(1);
+          }
+        } else {
+          tb.push_back(0);
+          tb.push_back(Bit::read_bytes(file, Bit::B2));
+        }
       }
 
       std::pair<std::vector<int> *, std::vector<int> *> header(tree_white, tree_black);
 
-      int lines;
-      file >> lines;
-      Vec<std::string> *data = new Vec<std::string>(lines, std::vector<std::string>());
+      int lines = Bit::read_bytes(file, Bit::B3);
+      //Vec<std::string> *data = new Vec<std::string>(lines, std::vector<std::string>());
+      std::string *data = new std::string("");
+      std::vector<std::string> *data = new std::vector<std::string>(lines, "");
 
       // Kodirani podatki
       std::string code;
       for (int i = 0; i < lines; i++) {
-        file >> count;
+        count = Bit::read_bytes(file, Bit::B3);
         (*data)[i].reserve(count);
         for (int j = 0; j < count; j++) {
           file >> code;
