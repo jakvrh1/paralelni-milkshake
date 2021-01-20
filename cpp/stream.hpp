@@ -52,9 +52,8 @@ class FifoStream : public Stream<K, T> {
     void produce(K key, T data) override {
       // Zaklenemo mutex in cakamo, dokler je vrsta polna
       pthread_mutex_lock(&mutex);
-      while (queue.size() >= max_size) {
+      while (queue.size() >= max_size)
         pthread_cond_wait(&cond_consumed, &mutex);
-      }
   
       pair<K, T> keydata(key, data);
       queue.push(keydata);
@@ -68,9 +67,8 @@ class FifoStream : public Stream<K, T> {
     pair<K, T> consume() override {
       // Zaklenemo mutex in čakamo, dokler je vrsta prazna
       pthread_mutex_lock(&mutex);
-      while (queue.empty()) {
+      while (queue.empty())
         pthread_cond_wait(&cond_produced, &mutex);
-      }
 
       pair<K, T> keydata = queue.front();
       queue.pop();
@@ -106,10 +104,6 @@ class PipelineStage {
       return consumer->consume();
     }
 
-    pair<K, T> consume(K key) {
-      return consumer->consume(key);
-    }
-
     void produce(K key, U data) {
       return producer->produce(key, data);
     }
@@ -130,10 +124,6 @@ class PipelineStage<K, T, void> {
 
     pair<K, T> consume() {
       return consumer->consume();
-    }
-
-    pair<K, T> consume(K key) {
-      return consumer->consume(key);
     }
 };
 
