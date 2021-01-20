@@ -203,9 +203,9 @@ class Huffman {
 
         // vsaka vrstica se začne z belimi biti
         if (j % 2 == 0) {
-          for (int k = 0; k < decode_white[enc_ij]; ++k) dd.push_back('0');
+          for (int k = 0; k < decode_white[enc_ij]; ++k) dd.push_back(255);
         } else {
-          for (int k = 0; k < decode_black[enc_ij]; ++k) dd.push_back('1');
+          for (int k = 0; k < decode_black[enc_ij]; ++k) dd.push_back(0);
         }
       }
     }

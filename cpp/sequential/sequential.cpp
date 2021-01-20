@@ -17,15 +17,15 @@ using namespace std;
 
 int main(int argc, char const *argv[]) {
 
-  for (int i = 10; i <= 10; i++) {
-    auto image_data = Input::read("../../assets/" + to_string(i) + ".png");
+  for (int i = 1; i <= 10; i++) {
+    auto image_data = Input::read_image("../../assets/" + to_string(i) + ".png");
     auto rle_data = RLE::encode(image_data);
 
     Huffman *hf = Huffman::initialize(rle_data);
     auto hd = hf->header();
     auto enc = hf->encode();
 
-    Output::write("test.txt", hd, enc);
+    Output::write_encoded("test.txt", hd, enc);
     delete enc;
     hf->finalize();
 
