@@ -190,9 +190,9 @@ class Huffman {
     return hf;
   }
 
-  Vec<char> *decode() {
-    Vec<char> *decoded_data = new Vec<char>();
-    decoded_data->assign(encoded_data->size(), std::vector<char>());
+  Vec<unsigned char> *decode() {
+    Vec<unsigned char> *decoded_data =
+        new Vec<unsigned char>(encoded_data->size(), std::vector<unsigned char>());
 
     auto &enc = *encoded_data;
 
