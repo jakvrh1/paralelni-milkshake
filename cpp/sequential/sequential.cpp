@@ -41,7 +41,7 @@ int main(int argc, char const *argv[]) {
     auto decoded = hf_recreated->decode();
 
     try {
-      Output::write_image("../../assets/out/" + to_string(i) + ".png", decoded);
+      Output::write_image("../../out/" + to_string(i) + ".png", decoded);
     } catch(const std::exception& e) {
       std::cerr << "Encoded " << i << ": " << e.what() << '\n';
     }

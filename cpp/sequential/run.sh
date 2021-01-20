@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir -p ../../out 
+
 echo "Compiling"
 g++ -std=c++11 -O2 sequential.cpp -o sequential.o 
 ./sequential.o

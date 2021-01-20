@@ -2,7 +2,12 @@
 *.txt
 *.data
 *.old
-assets/out/*
+out/*
+
+# Executables
+cpp/sequential/sequential
+cpp/pipeline/pipeline
+cpp/pipesquare/pipesquare
 
 # Prerequisites
 *.d
