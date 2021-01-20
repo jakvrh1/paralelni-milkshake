@@ -10,23 +10,19 @@
 
 using namespace std;
 
-// Abstrakcija za producer-consumer relacijo. Stream<K, T> omogoca, 
-// da na thread-safe nacin proizvajamo (produce) in porabljamo (consume) naloge.
+// Abstrakcija za producer-consumer relacijo. Stream<K, T> 
+// omogoca, da na thread-safe nacin (naloga implementacije) 
+// proizvajamo (produce) in porabljamo (consume) naloge.
 // 
-// Vsaka naloga je sestavljena iz kljuca K in podatkov T. Kljuc K sluzi
-// kot identifikator za nalogo.
+// Vsaka naloga je sestavljena iz kljuca K in podatkov T. 
+// Kljuc K sluzi kot identifikator za nalogo.
 //
-// Operacija consume lahko sprejme tudi kljuc, ki pove,
-// katero nalogo zelimo porabiti.
-//
-
 template <typename K, typename T>
 class Stream {
 
   public:
     virtual void produce(K key, T data);
     virtual pair<K, T> consume();
-    virtual pair<K, T> consume(K key);
 };
 
 // Implementacija Stream, ki sledi principu FIFO. Vrstni red
@@ -78,90 +74,6 @@ class FifoStream : public Stream<K, T> {
 
       pair<K, T> keydata = queue.front();
       queue.pop();
-
-      pthread_mutex_unlock(&mutex);
-
-      // Prebudimo eno nit, ki bo dodala podatke v vrsto
-      pthread_cond_signal(&cond_consumed);
-
-      return keydata;
-    }
-
-    // TODO search in queue?
-    pair<K, T> consume(K key) override {
-      return consume();
-    }
-};
-
-// Implementacija Streama, ki uporablja map, kar omogoca
-// enostavno porabljanje nalog po kljucu.
-//
-template <typename K, typename T> 
-class IndexedStream : public Stream<K, T> {
-
-  private:
-    std::unordered_map<K, T> map;
-    pthread_mutex_t mutex;
-    pthread_cond_t cond_produced;
-    pthread_cond_t cond_consumed;
-    unsigned int max_size;
-
-  public:
-    IndexedStream(unsigned int max_size) {
-      mutex = PTHREAD_MUTEX_INITIALIZER;
-      cond_produced = PTHREAD_COND_INITIALIZER;
-      cond_consumed = PTHREAD_COND_INITIALIZER;
-      if (max_size > 0) this->max_size = max_size;
-      else this->max_size = UINT_MAX;
-    }
-
-    void produce(K key, T data) override {
-      // Zaklenemo mutex in cakamo, dokler je map poln
-      pthread_mutex_lock(&mutex);
-      while (map.size() >= max_size) {
-        pthread_cond_wait(&cond_consumed, &mutex);
-      }
-
-      map[key] = data;
-
-      pthread_mutex_unlock(&mutex);
-
-      // Prebudimo eno nit, ki bo prevzela podatke iz vrste.
-      // Seveda bo se enkrat preverila, ce se kljuc ujema
-      pthread_cond_signal(&cond_produced);
-    }
-
-    pair<K, T> consume() override {
-      // Zaklenemo mutex in čakamo, dokler ni kaksnega elementa
-      pthread_mutex_lock(&mutex);
-
-      auto it = map.begin();
-      while ((it = map.begin()) == map.end()) {
-        pthread_cond_wait(&cond_produced, &mutex);
-      }
-
-      pair<K, T> keydata(it->first, it->second);
-      map.erase(it);
-
-      pthread_mutex_unlock(&mutex);
-
-      // Prebudimo eno nit, ki bo dodala podatke v vrsto
-      pthread_cond_signal(&cond_consumed);
-
-      return keydata;
-    }
-
-    pair<K, T> consume(K key) override {
-      // Zaklenemo mutex in čakamo, dokler ni elementa s tem kljucem
-      pthread_mutex_lock(&mutex);
-
-      auto it = map.find(key);
-      while ((it = map.find(key)) == map.end()) {
-        pthread_cond_wait(&cond_produced, &mutex);
-      }
-
-      pair<K, T> keydata(it->first, it->second);
-      map.erase(it);
 
       pthread_mutex_unlock(&mutex);
 
