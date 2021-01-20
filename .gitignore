@@ -1,5 +1,8 @@
 # Custom: txt files, perf data
-*.txt
+cpp/sequential/*.txt
+cpp/pipeline/*.txt
+cpp/pipesquare/*.txt
+build/*
 *.data
 *.old
 out/*

@@ -13,7 +13,7 @@
 #include "../output.hpp"
 #include "../stream.hpp"
 
-#define REPS 1000
+#define REPS 10
 
 struct huffman_data {
   Huffman *hf;
