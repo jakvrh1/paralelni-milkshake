@@ -1,6 +1,7 @@
 #ifndef STREAM_HPP
 #define STREAM_HPP
 
+#include <limits>
 #include <map>
 #include <queue>
 #include <stdexcept>
@@ -39,38 +40,50 @@ class FifoStream : public Stream<K, T> {
   private:
     std::queue<pair<K, T>> queue;
     pthread_mutex_t mutex;
-    pthread_cond_t cond;
+    pthread_cond_t cond_produced;
+    pthread_cond_t cond_consumed;
+    unsigned int max_size;
 
   public:
-    FifoStream() {
+    FifoStream(unsigned int max_size) {
       mutex = PTHREAD_MUTEX_INITIALIZER;
-      cond = PTHREAD_COND_INITIALIZER;
+      cond_produced = PTHREAD_COND_INITIALIZER;
+      cond_consumed = PTHREAD_COND_INITIALIZER;
+      if (max_size > 0) this->max_size = max_size;
+      else this->max_size = UINT_MAX;
     }
 
     void produce(K key, T data) override {
-      // Zaklenemo mutex in dodamo [product] v vrsto
+      // Zaklenemo mutex in cakamo, dokler je vrsta polna
       pthread_mutex_lock(&mutex);
-
+      while (queue.size() >= max_size) {
+        pthread_cond_wait(&cond_consumed, &mutex);
+      }
+  
       pair<K, T> keydata(key, data);
       queue.push(keydata);
 
-      // Prebudimo eno nit, ki bo prevzela podatke iz vrste
-      pthread_cond_signal(&cond);
-
       pthread_mutex_unlock(&mutex);
+
+      // Prebudimo eno nit, ki bo prevzela podatke iz vrste
+      pthread_cond_signal(&cond_produced);
     }
 
     pair<K, T> consume() override {
-      // Zaklenemo mutex in čakamo, dokler je queue prazen
+      // Zaklenemo mutex in čakamo, dokler je vrsta prazna
       pthread_mutex_lock(&mutex);
       while (queue.empty()) {
-        pthread_cond_wait(&cond, &mutex);
+        pthread_cond_wait(&cond_produced, &mutex);
       }
 
       pair<K, T> keydata = queue.front();
       queue.pop();
 
       pthread_mutex_unlock(&mutex);
+
+      // Prebudimo eno nit, ki bo dodala podatke v vrsto
+      pthread_cond_signal(&cond_consumed);
+
       return keydata;
     }
 
@@ -89,24 +102,33 @@ class IndexedStream : public Stream<K, T> {
   private:
     std::unordered_map<K, T> map;
     pthread_mutex_t mutex;
-    pthread_cond_t cond;
+    pthread_cond_t cond_produced;
+    pthread_cond_t cond_consumed;
+    unsigned int max_size;
 
   public:
-    IndexedStream() {
+    IndexedStream(unsigned int max_size) {
       mutex = PTHREAD_MUTEX_INITIALIZER;
-      cond = PTHREAD_COND_INITIALIZER;
+      cond_produced = PTHREAD_COND_INITIALIZER;
+      cond_consumed = PTHREAD_COND_INITIALIZER;
+      if (max_size > 0) this->max_size = max_size;
+      else this->max_size = UINT_MAX;
     }
 
     void produce(K key, T data) override {
-      // Zaklenemo mutex in dodamo data v map
+      // Zaklenemo mutex in cakamo, dokler je map poln
       pthread_mutex_lock(&mutex);
+      while (map.size() >= max_size) {
+        pthread_cond_wait(&cond_consumed, &mutex);
+      }
+
       map[key] = data;
+
+      pthread_mutex_unlock(&mutex);
 
       // Prebudimo eno nit, ki bo prevzela podatke iz vrste.
       // Seveda bo se enkrat preverila, ce se kljuc ujema
-      pthread_cond_signal(&cond);
-
-      pthread_mutex_unlock(&mutex);
+      pthread_cond_signal(&cond_produced);
     }
 
     pair<K, T> consume() override {
@@ -115,13 +137,17 @@ class IndexedStream : public Stream<K, T> {
 
       auto it = map.begin();
       while ((it = map.begin()) == map.end()) {
-        pthread_cond_wait(&cond, &mutex);
+        pthread_cond_wait(&cond_produced, &mutex);
       }
 
       pair<K, T> keydata(it->first, it->second);
       map.erase(it);
 
       pthread_mutex_unlock(&mutex);
+
+      // Prebudimo eno nit, ki bo dodala podatke v vrsto
+      pthread_cond_signal(&cond_consumed);
+
       return keydata;
     }
 
@@ -131,13 +157,17 @@ class IndexedStream : public Stream<K, T> {
 
       auto it = map.find(key);
       while ((it = map.find(key)) == map.end()) {
-        pthread_cond_wait(&cond, &mutex);
+        pthread_cond_wait(&cond_produced, &mutex);
       }
 
       pair<K, T> keydata(it->first, it->second);
       map.erase(it);
 
       pthread_mutex_unlock(&mutex);
+
+      // Prebudimo eno nit, ki bo dodala podatke v vrsto
+      pthread_cond_signal(&cond_consumed);
+
       return keydata;
     }
 };
