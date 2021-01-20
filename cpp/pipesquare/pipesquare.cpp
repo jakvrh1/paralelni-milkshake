@@ -128,10 +128,10 @@ void* write(void* arg) {
 int main(int argc, char const *argv[]) {
   mutex_write = PTHREAD_MUTEX_INITIALIZER;
 
-  FifoStream<int, string> input_stream;
-  FifoStream<int, struct image> image_stream;
-  FifoStream<int, Vec<int_bool>*> encoded_stream;
-  FifoStream<int, huffman_data> output_stream;
+  FifoStream<int, string> input_stream(2);
+  FifoStream<int, struct image> image_stream(2);
+  FifoStream<int, Vec<int_bool>*> encoded_stream(2);
+  FifoStream<int, huffman_data> output_stream(2);
 
   // Prva stopnja cevovoda, image reading
   PipelineStage<int, string, struct image> read_stage(&input_stream, &image_stream);  
