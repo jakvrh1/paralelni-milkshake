@@ -48,20 +48,22 @@ class RLE {
     return &enc;
   }
 
-  static Vec<int_bool> *encode(unsigned char *data) {
-    int A4_LINES = 1145;
-    int A4_LINE_LENGTH = 1728;
-    Vec<int_bool> *encoded_data = new Vec<int_bool>();
-    encoded_data->assign(A4_LINES, std::vector<int_bool>());
+  static Vec<int_bool> *encode(struct image im) {
+    int LINES = im.height;
+    int LINE_LENGTH = im.width;
 
+    Vec<int_bool> *encoded_data = new Vec<int_bool>();
+    encoded_data->assign(LINES, std::vector<int_bool>());
+
+    auto data = im.bytes;
     auto &enc = *encoded_data;
     int WHITE = 255;
 
-    for (int line = 0; line < A4_LINES; ++line) {
+    for (int line = 0; line < LINES; ++line) {
       int cnt = 0;
 
-      for (int pixel = 0; pixel < A4_LINE_LENGTH - 1; ++pixel) {
-        int idx = line * A4_LINE_LENGTH + pixel;
+      for (int pixel = 0; pixel < LINE_LENGTH - 1; ++pixel) {
+        int idx = line * LINE_LENGTH + pixel;
 
         if (data[idx] == data[idx + 1]) {
           cnt++;
@@ -75,7 +77,7 @@ class RLE {
         }
       }
 
-      int idxl = line * A4_LINE_LENGTH + A4_LINE_LENGTH - 1;
+      int idxl = line * LINE_LENGTH + LINE_LENGTH - 1;
       if (data[idxl] == WHITE)
         enc[line].push_back({cnt + 1, Type::White});
       else

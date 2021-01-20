@@ -6,6 +6,14 @@
 #include <string>
 #include <iostream>
 
+// Struktura za branje in pisanje slik. Predpostavka je, 
+// da je slika grayscale (1 channel).
+struct image {
+  unsigned char* bytes;
+  int width;
+  int height;
+};
+
 template <typename T> 
 using Vec = std::vector<std::vector<T>>;
 

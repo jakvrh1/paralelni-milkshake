@@ -13,6 +13,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "libs/stb_image.h"
+
 #include "types.hpp"
 #include "huffman.hpp"
 
@@ -23,16 +24,14 @@ class Input {
 
   public:
 
-    /**
-     * Prebere sliko v datoteki z imenom [filename]. Sliko vrne kot 2D vektor bool.
-     */
-    static unsigned char* read(const std::string &filename) {
+    // Prebere sliko v datoteki z imenom [filename]
+    static image read_image(const std::string &filename) {
       // Sliko preberemo že kot sivo (število komponent = 1)
       int width, height;
-      unsigned char* image = stbi_load(filename.c_str(), &width, &height, NULL, 1);
+      unsigned char* image_data = stbi_load(filename.c_str(), &width, &height, NULL, 1);
 
       // Preverimo, ali datoteka vsebuje slikovne podatke
-      if (image == nullptr) {
+      if (image_data == nullptr) {
         throw std::invalid_argument("File is not an image file");
       }
 
@@ -41,29 +40,8 @@ class Input {
         throw std::invalid_argument("Image is not of correct size");
       }
 
-      return image;
-
-      /*
-      Vec<bool>* bits = new Vec<bool>();
-      bits->assign(A4_LINES, std::vector<bool>(A4_LINE_LENGTH, false));
-
-      // Sprehodimo se po sliki in za bele piksle nastavimo true
-      // Če naletimo na piksel, ki ni bel ali črn, vrnemo null
-      for (int line = 0; line < A4_LINES; line++) {
-        for (int pixel = 0; pixel < A4_LINE_LENGTH; pixel++) {
-          int idx = line * A4_LINE_LENGTH + pixel;
-          if (image[idx] == 255) {
-            (*bits)[line][pixel] = true;
-          } else if (image[idx] != 0) {
-            throw std::invalid_argument("Image is not black and white");
-          }
-        }
-      }
-
-      stbi_image_free(image);
-
-      return bits;
-      */
+      struct image im = { image_data, width, height };
+      return im;
     }
 
     static Huffman *read_encoded(const std::string &filename) {

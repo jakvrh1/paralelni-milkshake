@@ -36,14 +36,14 @@ int writes = 0;
 
 // Funkcija za niti, ki berejo.
 void* read(void* arg) {
-  PipelineStage<int, string, unsigned char*>* stage = (PipelineStage<int, string, unsigned char*>*) arg;
+  PipelineStage<int, string, struct image>* stage = (PipelineStage<int, string, struct image>*) arg;
 
   while (true) {
     auto p = stage->consume(); 
     auto key = p.first;
     auto filename = p.second;
 
-    auto image_data = Input::read(filename.c_str());
+    auto image_data = Input::read_image(filename.c_str());
     stage->produce(key, image_data);
   }
 
@@ -52,7 +52,7 @@ void* read(void* arg) {
 
 // Funkcija za niti, ki prebrane podatke kodirajo z RLE. 
 void* rle(void* arg) {
-  PipelineStage<int, unsigned char*, Vec<int_bool>*>* stage = (PipelineStage<int, unsigned char*, Vec<int_bool>*>*) arg;
+  PipelineStage<int, struct image, Vec<int_bool>*>* stage = (PipelineStage<int, struct image, Vec<int_bool>*>*) arg;
 
   while (true) {
     auto p = stage->consume(); 
@@ -104,7 +104,7 @@ void* write(void* arg) {
     auto data = p.second;
     auto header = data.hf->header();
     
-    Output::write("test.txt", header, data.encoded);
+    Output::write_encoded("test.txt", header, data.encoded);
     data.hf->finalize();
     delete data.encoded;
   }
@@ -120,18 +120,18 @@ int main(int argc, char const *argv[]) {
   mutex_write = PTHREAD_MUTEX_INITIALIZER;
 
   FifoStream<int, string> input_stream;
-  FifoStream<int, unsigned char*> bit_stream;
+  FifoStream<int, struct image> image_stream;
   FifoStream<int, Vec<int_bool>*> encoded_stream;
   FifoStream<int, huffman_data> output_stream;
 
   // Prva stopnja cevovoda, image reading
-  PipelineStage<int, string, unsigned char*> read_stage(&input_stream, &bit_stream);  
+  PipelineStage<int, string, struct image> read_stage(&input_stream, &image_stream);  
   pthread_t read_threads[READ_THREADS];
   for (int i = 0; i < READ_THREADS; i++)
     pthread_create(&read_threads[i], NULL, read, &read_stage);
 
   // Druga stopnja cevovoda, run length encoding
-  PipelineStage<int, unsigned char*, Vec<int_bool>*> rle_stage(&bit_stream, &encoded_stream);
+  PipelineStage<int, struct image, Vec<int_bool>*> rle_stage(&image_stream, &encoded_stream);
   pthread_t rle_threads[RLE_THREADS];
   for (int i = 0; i < RLE_THREADS; i++)
     pthread_create(&rle_threads[i], NULL, rle, &rle_stage);

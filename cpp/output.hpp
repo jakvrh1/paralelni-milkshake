@@ -22,7 +22,7 @@ class Output {
   public:
 
     // Zapiše drevesi in  vsebino [data] po vrsticah.
-    static void write(
+    static void write_encoded(
       const std::string &filename, 
       const std::pair<std::vector<int>*, std::vector<int>*> header, 
       const Vec<std::string> *data
