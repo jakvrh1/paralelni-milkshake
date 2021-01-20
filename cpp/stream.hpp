@@ -124,11 +124,11 @@ class IndexedStream : public Stream<K, T> {
 
       map[key] = data;
 
+      pthread_mutex_unlock(&mutex);
+
       // Prebudimo eno nit, ki bo prevzela podatke iz vrste.
       // Seveda bo se enkrat preverila, ce se kljuc ujema
       pthread_cond_signal(&cond_produced);
-
-      pthread_mutex_unlock(&mutex);
     }
 
     pair<K, T> consume() override {
