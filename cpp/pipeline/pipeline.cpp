@@ -31,8 +31,12 @@ void* read(void* arg) {
     auto key = p.first;
     auto filename = p.second;
 
-    auto image_data = Input::read_image(filename.c_str());
-    stage->produce(key, image_data);
+    try {
+      auto image_data = Input::read_image(filename.c_str());
+      stage->produce(key, image_data);
+    } catch(const std::exception& e) {
+      std::cerr << filename << ": " << e.what() << '\n';
+    }
   }
 
   return nullptr;
@@ -82,7 +86,12 @@ void* write(void* arg) {
     auto data = p.second;
     auto header = data.hf->header();
     
-    Output::write_encoded("test.txt", header, data.encoded);
+    try {
+      Output::write_encoded("test.txt", header, data.encoded);
+    } catch(const std::exception& e) {
+      std::cerr << "Write encoded " << key << ": " << e.what() << '\n';
+    }
+
     data.hf->finalize();
     delete data.encoded;
   }

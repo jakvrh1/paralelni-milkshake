@@ -18,8 +18,16 @@ using namespace std;
 int main(int argc, char const *argv[]) {
 
   for (int i = 1; i <= 10; i++) {
-    auto image_data = Input::read_image("../../assets/" + to_string(i) + ".png");
-    auto rle_data = RLE::encode(image_data);
+    struct image im;
+    try {
+      im = Input::read_image("../../assets/" + to_string(i) + ".png");
+    } catch(const std::exception& e) {
+      std::cerr << "Image " << i << ": " << e.what() << '\n';
+      // Iz te moke ne bo testa
+      continue;
+    }
+
+    auto rle_data = RLE::encode(im);
 
     Huffman *hf = Huffman::initialize(rle_data);
     auto hd = hf->header();
@@ -31,7 +39,13 @@ int main(int argc, char const *argv[]) {
 
     Huffman *hf_recreated = Input::read_encoded("test.txt");
     auto decoded = hf_recreated->decode();
-    Output::write_image("../../assets/out/" + to_string(i) + ".png", decoded);
+
+    try {
+      Output::write_image("../../assets/out/" + to_string(i) + ".png", decoded);
+    } catch(const std::exception& e) {
+      std::cerr << "Encoded " << i << ": " << e.what() << '\n';
+    }
+
     hf_recreated->finalize();
     delete decoded;
   }
