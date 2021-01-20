@@ -14,20 +14,15 @@ using namespace std;
 // omogoca, da na thread-safe nacin (naloga implementacije) 
 // proizvajamo (produce) in porabljamo (consume) naloge.
 // 
-// Vsaka naloga je sestavljena iz kljuca K in podatkov T. Kljuc K sluzi
-// kot identifikator za nalogo.
+// Vsaka naloga je sestavljena iz kljuca K in podatkov T. 
+// Kljuc K sluzi kot identifikator za nalogo.
 //
-// Operacija consume lahko sprejme tudi kljuc, ki pove,
-// katero nalogo zelimo porabiti.
-//
-
 template <typename K, typename T>
 class Stream {
 
   public:
     virtual void produce(K key, T data);
     virtual pair<K, T> consume();
-    virtual pair<K, T> consume(K key);
 };
 
 // Implementacija Stream, ki sledi principu FIFO. Vrstni red
@@ -86,11 +81,6 @@ class FifoStream : public Stream<K, T> {
       pthread_cond_signal(&cond_consumed);
 
       return keydata;
-    }
-
-    // TODO search in queue?
-    pair<K, T> consume(K key) override {
-      return consume();
     }
 };
 
