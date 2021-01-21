@@ -35,4 +35,5 @@ make sqr # executes program pipesquare via run.sh file in same directory
 ```
 
 ## License
-[MIT](https://choosealicense.com/licenses/mit/)
+
+This project uses [MIT](https://choosealicense.com/licenses/mit/) license; see `LICENSE` file for more details.
