@@ -14,12 +14,12 @@
 #include "../output.hpp"
 #include "../stream.hpp"
 
-#define REPS 10
+#define REPS 1000
 
-#define READ_THREADS 4
-#define RLE_THREADS 2
-#define HUFFMAN_THREADS 2
-#define WRITE_THREADS 2
+#define READ_THREADS 2
+#define RLE_THREADS 1
+#define HUFFMAN_THREADS 1
+#define WRITE_THREADS 1
 
 using namespace std;
 
@@ -159,8 +159,10 @@ int main(int argc, char const *argv[]) {
     pthread_create(&write_threads[i], NULL, write, &write_stage);
 
   // V cevovod posljemo delo
-  for (int i = 0; i < REPS; i++) 
-    input_stream.produce(i, "../../assets/6.png");
+  for (int i = 1; i <= REPS; i++) {
+    int file_id = (i % 10) + 1;
+    input_stream.produce(i, "../../assets/" + std::to_string(file_id) + ".png");
+  } 
 
   // Pocakamo, da se pisanje zakljuci
   for (int i = 0; i < WRITE_THREADS; i++)
