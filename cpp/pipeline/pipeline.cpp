@@ -13,7 +13,7 @@
 #include "../output.hpp"
 #include "../stream.hpp"
 
-#define REPS 10
+#define REPS 1000
 
 struct huffman_data {
   Huffman *hf;
@@ -132,8 +132,10 @@ int main(int argc, char const *argv[]) {
   pthread_create(&write_thread, NULL, write, &write_stage);
 
   // V cevovod posljemo delo
-  for (int i = 0; i < REPS; i++) 
-    input_stream.produce(i, "../../assets/6.png");
+  for (int i = 1; i <= REPS; i++) {
+    int file_id = (i % 10) + 1;
+    input_stream.produce(i, "../../assets/" + std::to_string(file_id) + ".png");
+  } 
 
   pthread_join(write_thread, NULL);
   return 0;
