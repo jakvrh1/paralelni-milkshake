@@ -16,11 +16,11 @@
 using namespace std;
 
 int main(int argc, char const *argv[]) {
-
   for (int i = 1; i <= REPS; i++) {
     struct image im;
+    int file_id = (i % 10) + 1;
     try {
-      im = Input::read_image("../../assets/6.png");
+      im = Input::read_image("../../assets/" + std::to_string(file_id) + ".png");
     } catch(const std::exception& e) {
       std::cerr << "Image " << i << ": " << e.what() << '\n';
       // Iz te moke ne bo testa
@@ -33,7 +33,10 @@ int main(int argc, char const *argv[]) {
     auto hd = hf->header();
     auto enc = hf->encode();
 
-    Output::write_encoded("test.txt", hd, enc);
+    //Huffman *hf1 = Huffman::initialize(hd, enc);
+
+    Output::write_encoded("../../out_encoded/test" + std::to_string(file_id) + ".txt", hd, enc);
+    //Output::write_image("../../out/" + std::to_string(file_id) + ".png", hf1->decode());
     delete enc;
     hf->finalize();
   }
