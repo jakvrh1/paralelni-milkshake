@@ -107,9 +107,10 @@ void* write(void* arg) {
     auto key = p.first;
     auto data = p.second;
     auto header = data.hf->header();
+    auto filename = "../../out_encoded/out" + std::to_string(key) + ".txt";
     
     try {
-      Output::write_encoded("test.txt", header, data.encoded);
+      Output::write_encoded(filename, header, data.encoded);
     } catch(const std::exception& e) {
       std::cerr << "Write encoded " << key << ": " << e.what() << '\n';
     }
