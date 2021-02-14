@@ -191,8 +191,8 @@ class Huffman {
   }
 
   Vec<unsigned char> *decode() {
-    Vec<unsigned char> *decoded_data =
-        new Vec<unsigned char>(encoded_data->size(), std::vector<unsigned char>());
+    Vec<unsigned char> *decoded_data = new Vec<unsigned char>(
+        encoded_data->size(), std::vector<unsigned char>());
 
     auto &enc = *encoded_data;
 
@@ -243,20 +243,19 @@ class Huffman {
     std::map<int, int> b;
 
     for (auto &i : data) {
-      for (auto &j : i) {
-        if (j.second)
-          b[j.first]++;
-        else
-          w[j.first]++;
+      for (int j = 0; j < i.size(); ++j) {
+        if (i[j].second) {
+          b[i[j].first]++;
+          // v primeru, da začnemo vrstico s črnimi slikovnimi točkami, vrinemo
+          // belo slikovno točko dolžine 0
+          if (j == 0) w[0]++;
+        } else
+          w[i[j].first]++;
       }
     }
 
     std::multimap<int, Node *> new_data_white;
     std::multimap<int, Node *> new_data_black;
-
-    // ročno vstavimo WHITE dolžine 0 ( v txt datoteki nimamo dolžin 0, jih pa
-    // potrebujemo pri zapisu )
-    new_data_white.insert({1, Node::create(0, Type::White)});
 
     for (auto &i : w)
       new_data_white.insert({i.second, Node::create(i.first, Type::White)});
