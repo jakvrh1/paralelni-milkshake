@@ -1,4 +1,4 @@
 cpp/libs/* linguist-vendored
-cpp/pipeline/run.sh linguist-vendored
-cpp/pipesquere/run.sh linguist-vendored
-cpp/sequential/run.sh linguist-vendored
+cpp/pipeline/run.sh -linguist-vendored
+cpp/pipesquere/run.sh -linguist-vendored
+cpp/sequential/run.sh -linguist-vendored
